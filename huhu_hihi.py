@@ -89,7 +89,7 @@ def window_gifts():
     gifts = []
     chosen_tribute_gift = values['chosen_tribute'][0]
     print(values)
-    for row in cur.execute('''SELECT S.GiftName, S.Amount
+    for row in cur.execute('''SELECT S.GiftName, S.Amount, S.Authorization
                               FROM SendsGift S, Tribute T
                               WHERE S.TributeID = T.TributeID and T.Mentor_SSN = ? and T.TributeID = ? ''', (login_user_id,chosen_tribute_gift)):
         gifts.append(row)
