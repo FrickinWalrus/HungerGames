@@ -87,14 +87,15 @@ def window_mentor():
 
 def window_gifts():
     gifts = []
-
-    for row in cur.execute('''SELECT *
+    chosen_tribute_gift = values['chosen_tribute'][0]
+    print(values)
+    for row in cur.execute('''SELECT S.GiftName, S.Amount
                               FROM SendsGift S, Tribute T
-                              WHERE S.TributeID = T.TributeID and T.Mentor_SSN = ?''', (login_user_id,)):
+                              WHERE S.TributeID = T.TributeID and T.Mentor_SSN = ? and T.TributeID = ? ''', (login_user_id,chosen_tribute_gift)):
         gifts.append(row)
 
-    layout = [[sg.Text('Your Tributes:'), sg.Combo(gifts, size=(25, 7), key='tribute'), sg.Button('Pending Gifts')],
-              [sg.Listbox((), size=(40, 10), key='gift')],
+    layout = [
+              [sg.Listbox(gifts, size=(100, 10), key='gift')],
               [sg.Button('Authorize')],
               [sg.Button('Return To Main')]]
 
