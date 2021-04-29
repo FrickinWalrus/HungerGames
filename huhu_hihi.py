@@ -99,10 +99,7 @@ def window_gifts():
               [sg.Button('Return To Main')]]
 
     return sg.Window('Gifts Window', layout)
-"""def authorize_gift():
-    for row in cur.execute('''SELECT Authorization,AuthorizationDate
-                                FROM
-                                ''')"""
+
 def window_tribute_activity():
     pass
 
@@ -116,19 +113,27 @@ while True:
         if user_type == 'Mentor':
             window = window_mentor()
 
-    if (event == 'Tribute Activity'):
+    elif (event == 'Tribute Activity'):
         window.close()
         window = window_tribute_activity()
 
-    if (event == 'See Pending Gifts'):
+    elif (event == 'See Pending Gifts'):
         window.close()
         window = window_gifts()
 
-    if (event=='Logout'):
+    elif (event=='Logout'):
         window.close()
         window =window_login()
 
-    if event == sg.WIN_CLOSED or event == 'Exit':
+    elif event == 'Return To Main':
+        if login_user_type == 'Mentor':
+            window.close()
+            window = window_mentor()
+        else:
+            window.close()
+            window = window_login()
+
+    elif event == sg.WIN_CLOSED or event == 'Exit':
         break
 
 window.close()
