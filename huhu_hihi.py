@@ -4,6 +4,7 @@ import os
 import sqlite3
 import PySimpleGUI as sg
 from datetime import datetime
+
 ProjectFolder = os.path.abspath(os.path.join(os.path.abspath(os.getcwd())))
 directory_name = os.path.dirname
 dbFolder = os.path.abspath(os.path.join(os.path.abspath(os.getcwd()), "database/Implementation1.db"))
@@ -26,6 +27,7 @@ def window_login():
               [sg.Exit()]]
 
     return sg.Window('Login Window', layout)
+
 
 def login_check():
     global login_user_id
@@ -53,7 +55,7 @@ def login_check():
             login_user_id = row[0]
 
             # we will use the name in the welcome message
-            login_user_name = row[1] +" "+ row[2]
+            login_user_name = row[1] + " " + row[2]
 
             # now let's find which type of user this login_user_id belongs to
             # let's first check if this is a student
@@ -65,8 +67,9 @@ def login_check():
             else:
                 sg.popup('No such mentor found')
                 window.close()
-                window=window_login()
+                window = window_login()
             return (login_user_type)
+
 
 def window_mentor():
     tributes = []
@@ -77,7 +80,7 @@ def window_mentor():
                                   AND MSSN = ?''', (login_user_id,)):
         tributes.append(row)
     layout = [[sg.Text('Welcome ' + login_user_name)],
-              [sg.Combo(tributes,size=(40,len(tributes)),key='chosen_tribute')],
+              [sg.Combo(tributes, size=(40, len(tributes)), key='chosen_tribute')],
               [sg.Button('Tribute Activity')],
               [sg.Button('See Pending Gifts')],
               [sg.Button('Logout')]]
@@ -91,26 +94,46 @@ def window_gifts():
     print(values)
     for row in cur.execute('''SELECT S.GiftName, S.Amount, S.Authorization
                               FROM SendsGift S, Tribute T
-                              WHERE S.TributeID = T.TributeID and T.Mentor_SSN = ? and T.TributeID = ? ''', (login_user_id,chosen_tribute_gift)):
+                              WHERE S.TributeID = T.TributeID and T.Mentor_SSN = ? and T.TributeID = ? ''',
+                           (login_user_id, chosen_tribute_gift)):
         gifts.append(row)
 
     layout = [
-              [sg.Listbox(gifts, size=(100, 10), key='gift')],
-              [sg.Button('Authorize')],
-              [sg.Button('Return To Main')]]
+        [sg.Listbox(gifts, size=(100, 10), key='gift')],
+        [sg.Button('Authorize')],
+        [sg.Button('Return To Main')]]
 
     return sg.Window('Gifts Window', layout)
 
-def window_tribute_activity():
-    pass
 
-window=window_login()
+def window_tribute_activity():
+    activities = []
+    chosen_tribute4activities = values['chosen_tribute'][0]
+    print(values)
+    for row in cur.execute('''SELECT I.InteractionDate, T1.TName, T1.TSurname, I.Description, T2.TName, T2.TSurname
+                              FROM Interaction I, Tribute T1, Tribute T2
+                              WHERE I.SourceTribute = T1.TributeID
+                                and I.TargetTribute = T2.TributeID 
+                                and (T1.TributeID = ? or T2.TributeID = ?)
+                              ORDER BY I.InteractionDate DESC''',
+                           (chosen_tribute4activities, chosen_tribute4activities)):
+        activities.append(row)
+
+    print(activities)  # for debug purposes
+    layout = [
+        [sg.Listbox(activities, size=(100, 10), key='activities')],
+        [sg.Button('Return To Main')]]
+
+    return sg.Window('Gifts Window', layout)
+
+
+window = window_login()
 while True:
     event, values = window.read()
 
     if (event == 'Login'):
         window.close()
-        user_type = login_check() #determines user typr and existance of user
+        user_type = login_check()  # determines user typr and existance of user
         if user_type == 'Mentor':
             window = window_mentor()
 
@@ -122,9 +145,9 @@ while True:
         window.close()
         window = window_gifts()
 
-    elif (event=='Logout'):
+    elif (event == 'Logout'):
         window.close()
-        window =window_login()
+        window = window_login()
 
     elif event == 'Return To Main':
         if login_user_type == 'Mentor':
