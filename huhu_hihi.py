@@ -86,12 +86,18 @@ def window_mentor():
 
 def window_gifts():
     gifts = []
+
+    global tr_gift
+    tr_gift = []
     global chosen_tribute_gift
     chosen_tribute_gift = values['chosen_tribute'][0]
-    print(values)
+
+    tr_gift.append(chosen_tribute_gift)
+    print(chosen_tribute_gift)
     for row in cur.execute('''SELECT S.GiftName, S.Amount, S.Authorization, S.AuthorizationDate
                               FROM SendsGift S, Tribute T
-                              WHERE S.TributeID = T.TributeID and T.Mentor_SSN = ? and T.TributeID = ? ''', (login_user_id,chosen_tribute_gift)):
+                              WHERE Authorization=False
+                              and S.TributeID = T.TributeID and T.Mentor_SSN = ? and T.TributeID = ? ''', (login_user_id,chosen_tribute_gift)):
         gifts.append(row)
 
     layout = [[sg.Listbox(gifts, size=(80, 10), key='gift')],
@@ -101,10 +107,29 @@ def window_gifts():
     return sg.Window('Gifts Window', layout)
 
 def Authorize():
-    cur.execute('''UPDATE SendsGift SET Authorization = ? WHERE TributeID = ?''', (True,chosen_tribute_gift))
+    global tr_gift
+    now=datetime.now()
+    cur.execute('''UPDATE SendsGift SET Authorization = ?, AuthorizationDate=? WHERE TributeID = ?''', (True, now, tr_gift[0]))
 
 def window_tribute_activity():
-    pass
+    activities = []
+    chosen_tribute4activities = values['chosen_tribute'][0]
+    print(values)
+    for row in cur.execute('''SELECT I.InteractionDate, T1.TName, T1.TSurname, I.Description, T2.TName, T2.TSurname
+                              FROM Interaction I, Tribute T1, Tribute T2
+                              WHERE I.SourceTribute = T1.TributeID
+                                and I.TargetTribute = T2.TributeID 
+                                and (T1.TributeID = ? or T2.TributeID = ?)
+                              ORDER BY I.InteractionDate DESC''',
+                           (chosen_tribute4activities, chosen_tribute4activities)):
+        activities.append(row)
+
+    print(activities)  # for debug purposes
+    layout = [
+        [sg.Listbox(activities, size=(100, 10), key='activities')],
+        [sg.Button('Return To Main')]]
+
+    return sg.Window('Gifts Window', layout)
 
 window=window_login()
 while True:
