@@ -46,6 +46,8 @@ def login_check():
 
         if row is None:
             sg.popup('ID or password is wrong!')
+            window.close()
+            window = window_login()
         else:
             # this is some existing user, let's keep the ID of this user in the global variable
             login_user_id = row[0]
@@ -91,12 +93,16 @@ def window_gifts():
                               WHERE S.TributeID = T.TributeID and T.Mentor_SSN = ?''', (login_user_id,)):
         gifts.append(row)
 
-    layout = [[sg.Text('Your Tributes:'), sg.Combo(gifts, size=(25, 7), key='tribute'), sg.Button('List Tributes')],
-              [sg.Listbox((), size=(40, 10), key='student')],
-              [sg.Text('Grade: '), sg.Input(key='grade'), sg.Button('Update Grade')],
+    layout = [[sg.Text('Your Tributes:'), sg.Combo(gifts, size=(25, 7), key='tribute'), sg.Button('Pending Gifts')],
+              [sg.Listbox((), size=(40, 10), key='gift')],
+              [sg.Button('Authorize')],
               [sg.Button('Return To Main')]]
 
-    return sg.Window('Grade Window', layout)
+    return sg.Window('Gifts Window', layout)
+"""def authorize_gift():
+    for row in cur.execute('''SELECT Authorization,AuthorizationDate
+                                FROM
+                                ''')"""
 def window_tribute_activity():
     pass
 
