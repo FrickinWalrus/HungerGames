@@ -1,11 +1,14 @@
 # import
 import random
+import os
 import sqlite3
 import PySimpleGUI as sg
 from datetime import datetime
-
+ProjectFolder = os.path.abspath(os.path.join(os.path.abspath(os.getcwd())))
+directory_name = os.path.dirname
+dbFolder = os.path.abspath(os.path.join(os.path.abspath(os.getcwd()), "database/Implementation1.db"))
 # connect to the DB
-con = sqlite3.connect('/Users/ayceidil/Desktop/Implementation1.db')
+con = sqlite3.connect(dbFolder)
 cur = con.cursor()
 
 # global variables
