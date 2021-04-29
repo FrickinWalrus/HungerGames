@@ -81,25 +81,35 @@ def window_mentor():
               [sg.Button('Tribute Activity')],
               [sg.Button('See Pending Gifts')],
               [sg.Button('Logout')]]
-
     return sg.Window('Mentor Window', layout)
 
 
 def window_gifts():
     gifts = []
+
+    global tr_gift
+    tr_gift = []
+    global chosen_tribute_gift
     chosen_tribute_gift = values['chosen_tribute'][0]
-    print(values)
-    for row in cur.execute('''SELECT S.GiftName, S.Amount, S.Authorization
+
+    tr_gift.append(chosen_tribute_gift)
+    print(chosen_tribute_gift)
+    for row in cur.execute('''SELECT S.GiftName, S.Amount, S.Authorization, S.AuthorizationDate
                               FROM SendsGift S, Tribute T
-                              WHERE S.TributeID = T.TributeID and T.Mentor_SSN = ? and T.TributeID = ? ''', (login_user_id,chosen_tribute_gift)):
+                              WHERE Authorization=False
+                              and S.TributeID = T.TributeID and T.Mentor_SSN = ? and T.TributeID = ? ''', (login_user_id,chosen_tribute_gift)):
         gifts.append(row)
 
-    layout = [
-              [sg.Listbox(gifts, size=(100, 10), key='gift')],
+    layout = [[sg.Listbox(gifts, size=(80, 10), key='gift')],
               [sg.Button('Authorize')],
               [sg.Button('Return To Main')]]
 
     return sg.Window('Gifts Window', layout)
+
+def Authorize():
+    global tr_gift
+    now=datetime.now()
+    cur.execute('''UPDATE SendsGift SET Authorization = ?, AuthorizationDate=? WHERE TributeID = ?''', (True, now, tr_gift[0]))
 
 def window_tribute_activity():
     activities = []
@@ -121,7 +131,6 @@ def window_tribute_activity():
 
     return sg.Window('Gifts Window', layout)
 
-
 window=window_login()
 while True:
     event, values = window.read()
@@ -140,9 +149,13 @@ while True:
         window.close()
         window = window_gifts()
 
-    elif (event=='Logout'):
+    elif (event == 'Logout'):
         window.close()
         window =window_login()
+
+    elif (event == "Authorize"):
+        Authorize()
+        window = window_gifts()
 
     elif event == 'Return To Main':
         if login_user_type == 'Mentor':
