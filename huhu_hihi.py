@@ -18,14 +18,15 @@ login_user_type = -1
 
 
 # window functions
+sg.theme('DarkBrown4')
 def window_login():
-    layout = [[sg.Text('Welcome to the Hunger Games Management System. Please enter your information.')],
-              [sg.Text('SSN:', size=(10, 1)), sg.Input(size=(3, 1), key='id')],
-              [sg.Text('Password:', size=(20, 1)), sg.Input(size=(20, 1), key='password')],
-              [sg.Button('Login')],
-              [sg.Exit()]]
+    layout = [[sg.Text('Welcome to the Hunger Games Management System.', pad=((40,40),(0,5)), font='Helvetica 12 bold')],
+              [sg.Text('Please enter your information.', pad=((0,0),(0,5)))],
+              [sg.Text('SSN:', size=(10, 1), pad=((0,75),(0,0))), sg.Input(size=(20, 1), key='id')],
+              [sg.Text('Password:', size=(20, 1), pad=((0,0),(0,15))), sg.Input(size=(20, 1), pad=((0,0),(0,15)), key='password')],
+              [sg.Exit(),sg.Button('Login',pad=((400,0),(0,0)))]]
 
-    return sg.Window('Login Window', layout)
+    return sg.Window('Login Window', layout, size=(500,160))
 
 def login_check():
     global login_user_id
@@ -36,16 +37,16 @@ def login_check():
     uid = values['id']
     upass = values['password']
     if uid == '':
-        sg.popup('SSN cannot be empty')
+        sg.popup_no_buttons('SSN cannot be empty',title='Error',auto_close=True,auto_close_duration=5)
     elif upass == '':
-        sg.popup('Password cannot be empty')
+        sg.popup_no_buttons('Password cannot be empty',title='Error',auto_close=True,auto_close_duration=5)
     else:
         # first check if this is a valid user
         cur.execute('SELECT SSN, UName, USurname FROM User WHERE SSN = ? AND Password = ?', (uid, upass))
         row = cur.fetchone()
 
         if row is None:
-            sg.popup('ID or password is wrong!')
+            sg.popup_no_buttons('ID/Password is incorrect.',title='Error',auto_close=True,auto_close_duration=5)
             window.close()
             window = window_login()
         else:
@@ -63,7 +64,7 @@ def login_check():
                 login_user_type = 'Mentor'
 
             else:
-                sg.popup('No such mentor found')
+                sg.popup('No such mentor found.')
                 window.close()
                 window=window_login()
             return (login_user_type)
@@ -76,11 +77,10 @@ def window_mentor():
                                   WHERE MSSN=Mentor_SSN
                                   AND MSSN = ?''', (login_user_id,)):
         tributes.append(row)
-    layout = [[sg.Text('Welcome ' + login_user_name)],
-              [sg.Combo(tributes,size=(40,len(tributes)),key='chosen_tribute')],
-              [sg.Button('Tribute Activity')],
-              [sg.Button('See Pending Gifts')],
-              [sg.Button('Logout')]]
+    layout = [[sg.Text('Welcome ' + login_user_name, font='Helvetica 12 bold', pad=(0,5))],
+              [sg.Text('Choose a tribute:', pad=((0,0),(10,25))), sg.Combo(tributes,size=(40,len(tributes)), pad=((5,0),(10,25)),key='chosen_tribute')],
+              [sg.Button('See Tribute Activity')],
+              [sg.Button('See Gifts For The Tribute', pad=((5,192),(0,0))),sg.Button('Logout',)]]
     return sg.Window('Mentor Window', layout)
 
 
@@ -88,12 +88,17 @@ def window_gifts():
     gifts = []
     global chosen_tribute_gift
     chosen_tribute_gift = values['chosen_tribute'][0]
-
-    for row in cur.execute('''SELECT S.GiftName, S.Amount, S.Authorization, S.AuthorizationDate
+    giftRows = cur.execute('''SELECT S.GiftName, S.Amount, S.Authorization, S.AuthorizationDate
                               FROM SendsGift S, Tribute T
                               WHERE Authorization=False
-                              and S.TributeID = T.TributeID and T.Mentor_SSN = ? and T.TributeID = ? ''', (login_user_id,chosen_tribute_gift)):
-        gifts.append(row)
+                              and S.TributeID = T.TributeID and T.Mentor_SSN = ? and T.TributeID = ? ''', (login_user_id,chosen_tribute_gift))
+    for row in giftRows:
+        row = list(row)
+        if row[2] == 1:
+            row[2] = 'Authorized'
+        else:
+            row[2] = 'Pending'
+        gifts.append(tuple(row))
 
     layout = [[sg.Listbox(gifts, size=(80, 10), key='gift')],
               [sg.Button('Authorize')],
@@ -104,7 +109,7 @@ def window_gifts():
 def window_tribute_activity():
     activities = []
     chosen_tribute4activities = values['chosen_tribute'][0]
-    print(values)
+    #print(values)
     for row in cur.execute('''SELECT I.InteractionDate, T1.TName, T1.TSurname, I.Description, T2.TName, T2.TSurname
                               FROM Interaction I, Tribute T1, Tribute T2
                               WHERE I.SourceTribute = T1.TributeID
@@ -114,44 +119,53 @@ def window_tribute_activity():
                            (chosen_tribute4activities, chosen_tribute4activities)):
         activities.append(row)
 
-    print(activities)  # for debug purposes
-    layout = [
-        [sg.Listbox(activities, size=(100, 10), key='activities')],
-        [sg.Button('Return To Main')]]
+    #print(activities)  # for debug purposes
+    layout = [[sg.Listbox(activities, size=(100, 10), key='activities')],
+              [sg.Button('Return To Main')]]
 
     return sg.Window('Gifts Window', layout)
 
-window=window_login()
+window = window_login()
 while True:
     event, values = window.read()
 
-    if (event == 'Login'):
+    if event == 'Login':
         window.close()
         user_type = login_check() #determines user typr and existance of user
         if user_type == 'Mentor':
             window = window_mentor()
 
-    elif (event == 'Tribute Activity'):
+    elif event == 'See Tribute Activity':
         window.close()
         window = window_tribute_activity()
 
-    elif (event == 'See Pending Gifts'):
+    elif event == 'See Gifts For The Tribute':
         window.close()
         window, chosenTribute = window_gifts()
 
-    elif (event == 'Logout'):
+    elif event == 'Logout':
         window.close()
-        window =window_login()
+        window = window_login()
 
-    elif (event == "Authorize"):
-        temp = []
-        cur.execute('UPDATE SendsGift SET Authorization = ? WHERE TributeID = ? ', (True, chosenTribute))
-        for row in cur.execute('''SELECT S.GiftName, S.Amount, S.Authorization, S.AuthorizationDate
-                                  FROM SendsGift S, Tribute T
-                                  WHERE S.TributeID = T.TributeID and T.Mentor_SSN = ? and T.TributeID = ?''',
-                               (login_user_id, chosenTribute)):
-            temp.append(row)
-        window.Element('gift').Update(values=temp)
+    elif event == "Authorize":
+        if values['gift'][0][2] == 1: # if the gift is already authorized
+            sg.popup_no_buttons("The gift is already authorized.",title='',auto_close=True,auto_close_duration=5)
+        else:
+            temp = [] # Temporary list to update values
+            cur.execute('UPDATE SendsGift SET Authorization = ? WHERE TributeID = ? ', (True, chosenTribute)) # Update query for SQL
+            # Re-fetch gifts
+            giftRows_Auth =  cur.execute('''SELECT S.GiftName, S.Amount, S.Authorization, S.AuthorizationDate
+                                      FROM SendsGift S, Tribute T
+                                      WHERE S.TributeID = T.TributeID and T.Mentor_SSN = ? and T.TributeID = ?''',(login_user_id, chosenTribute))
+            for row in giftRows_Auth:
+                row = list(row)
+                if row[2] == 1:
+                    row[2] = 'Authorized'
+                else:
+                    row[2] = 'Pending'
+                temp.append(tuple(row))
+
+            window.Element('gift').Update(values=temp) # Finally update and re-display
 
     elif event == 'Return To Main':
         if login_user_type == 'Mentor':
