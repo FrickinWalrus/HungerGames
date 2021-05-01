@@ -85,26 +85,28 @@ def window_mentor():
 
 
 def window_gifts():
+    gifts = getGifts(chosenTribute_G)
+    layout = [[sg.Listbox(gifts, size=(80, 10), key='gift')],
+              [sg.Button('Authorize')],
+              [sg.Button('Return To Main')]]
+    print("pipi", chosenTribute_G)
+    return sg.Window('Gifts Window', layout), chosenTribute_G
+
+
+def getGifts(tribute):
     gifts = []
-    global chosen_tribute_gift
-    chosen_tribute_gift = values['chosen_tribute'][0]
-    giftRows = cur.execute('''SELECT S.GiftName, S.Amount, S.Authorization, S.AuthorizationDate
-                              FROM SendsGift S, Tribute T
-                              WHERE Authorization=False
-                              and S.TributeID = T.TributeID and T.Mentor_SSN = ? and T.TributeID = ? ''', (login_user_id,chosen_tribute_gift))
-    for row in giftRows:
+    for row in cur.execute('''SELECT S.GiftName, S.Amount, S.Authorization, S.AuthorizationDate
+                            FROM SendsGift S, Tribute T
+                            WHERE S.TributeID = T.TributeID and T.Mentor_SSN = ? and T.TributeID = ? ''',
+                            (login_user_id, tribute)):
         row = list(row)
         if row[2] == 1:
             row[2] = 'Authorized'
         else:
             row[2] = 'Pending'
         gifts.append(tuple(row))
+    return gifts
 
-    layout = [[sg.Listbox(gifts, size=(80, 10), key='gift')],
-              [sg.Button('Authorize')],
-              [sg.Button('Return To Main')]]
-
-    return sg.Window('Gifts Window', layout), chosen_tribute_gift
 
 def window_tribute_activity():
     activities = []
@@ -118,13 +120,12 @@ def window_tribute_activity():
                               ORDER BY I.InteractionDate DESC''',
                            (chosen_tribute4activities, chosen_tribute4activities)):
         activities.append(row)
-
     #print(activities)  # for debug purposes
     layout = [[sg.Listbox(activities, size=(100, 10), key='activities')],
               [sg.Button('Return To Main')]]
-
     return sg.Window('Gifts Window', layout)
 
+# ----------- MAIN CODE -----------
 window = window_login()
 while True:
     event, values = window.read()
@@ -140,32 +141,24 @@ while True:
         window = window_tribute_activity()
 
     elif event == 'See Gifts For The Tribute':
+        chosenTribute_G = values['chosen_tribute'][0]
         window.close()
-        window, chosenTribute = window_gifts()
+        window, chosenTribute_G = window_gifts()
 
     elif event == 'Logout':
         window.close()
         window = window_login()
 
     elif event == "Authorize":
-        if values['gift'][0][2] == 1: # if the gift is already authorized
-            sg.popup_no_buttons("The gift is already authorized.",title='',auto_close=True,auto_close_duration=5)
+        gift = values['gift']
+        if gift == []:
+            sg.popup_no_buttons("Please select a gift to authorize.", title='', auto_close=True, auto_close_duration=2)
         else:
-            temp = [] # Temporary list to update values
-            cur.execute('UPDATE SendsGift SET Authorization = ? WHERE TributeID = ? ', (True, chosenTribute)) # Update query for SQL
-            # Re-fetch gifts
-            giftRows_Auth =  cur.execute('''SELECT S.GiftName, S.Amount, S.Authorization, S.AuthorizationDate
-                                      FROM SendsGift S, Tribute T
-                                      WHERE S.TributeID = T.TributeID and T.Mentor_SSN = ? and T.TributeID = ?''',(login_user_id, chosenTribute))
-            for row in giftRows_Auth:
-                row = list(row)
-                if row[2] == 1:
-                    row[2] = 'Authorized'
-                else:
-                    row[2] = 'Pending'
-                temp.append(tuple(row))
-
-            window.Element('gift').Update(values=temp) # Finally update and re-display
+            if gift[0][2] == 1: # if the gift is already authorized
+                sg.popup_no_buttons("The gift is already authorized.",title='',auto_close=True,auto_close_duration=5)
+            else:
+                cur.execute('UPDATE SendsGift SET Authorization = ? WHERE TributeID = ? and GiftName = ?', (True, chosenTribute_G, gift[0][0])) # Update query for SQL
+                window.Element('gift').Update(values=getGifts(chosenTribute_G)) # Finally update and re-display
 
     elif event == 'Return To Main':
         if login_user_type == 'Mentor':
