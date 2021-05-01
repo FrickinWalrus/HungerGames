@@ -38,8 +38,12 @@ def login_check():
     upass = values['password']
     if uid == '':
         sg.popup_no_buttons('SSN cannot be empty',title='Error',auto_close=True,auto_close_duration=5)
+        window.close()
+        window=window_login()
     elif upass == '':
         sg.popup_no_buttons('Password cannot be empty',title='Error',auto_close=True,auto_close_duration=5)
+        window.close()
+        window=window_login()
     else:
         # first check if this is a valid user
         cur.execute('SELECT SSN, UName, USurname FROM User WHERE SSN = ? AND Password = ?', (uid, upass))
