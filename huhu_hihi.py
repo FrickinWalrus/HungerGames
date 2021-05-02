@@ -1,5 +1,6 @@
 # import
 import random
+from datetime import datetime
 import os
 import sqlite3
 import PySimpleGUI as sg
@@ -90,10 +91,9 @@ def window_mentor():
 
 def window_gifts():
     gifts = getGifts(chosenTribute_G)
-    layout = [[sg.Listbox(gifts, size=(80, 10), key='gift')],
+    layout = [[sg.Listbox(values=gifts, size=(80, 10), key='gift')],
               [sg.Button('Authorize')],
               [sg.Button('Return To Main')]]
-    print("pipi", chosenTribute_G)
     return sg.Window('Gifts Window', layout), chosenTribute_G
 
 
@@ -136,32 +136,41 @@ while True:
 
     if event == 'Login':
         window.close()
-        user_type = login_check() #determines user typr and existance of user
+        user_type = login_check() #determines user type and existance of user
         if user_type == 'Mentor':
             window = window_mentor()
 
     elif event == 'See Tribute Activity':
-        window.close()
-        window = window_tribute_activity()
+        print(values)
+        if values['chosen_tribute'] == '':
+            sg.popup_no_buttons("Please select a tribute.", title='', auto_close=True, auto_close_duration=2)
+        else:
+            window.close()
+            window = window_tribute_activity()
 
     elif event == 'See Gifts For The Tribute':
-        chosenTribute_G = values['chosen_tribute'][0]
-        window.close()
-        window, chosenTribute_G = window_gifts()
+        if values['chosen_tribute'] == '':
+            sg.popup_no_buttons("Please select a tribute.", title='', auto_close=True, auto_close_duration=2)
+        else:
+            chosenTribute_G = values['chosen_tribute'][0]
+            window.close()
+            window, chosenTribute_G = window_gifts()
 
     elif event == 'Logout':
         window.close()
         window = window_login()
 
     elif event == "Authorize":
+        giftDate = datetime.now()
+        giftDate = giftDate.strftime('%Y-%m-%d %H:%M:%S"')
         gift = values['gift']
         if gift == []:
             sg.popup_no_buttons("Please select a gift to authorize.", title='', auto_close=True, auto_close_duration=2)
         else:
-            if gift[0][2] == 1: # if the gift is already authorized
+            if gift[0][2] == 'Authorized': # if the gift is already authorized
                 sg.popup_no_buttons("The gift is already authorized.",title='',auto_close=True,auto_close_duration=5)
             else:
-                cur.execute('UPDATE SendsGift SET Authorization = ? WHERE TributeID = ? and GiftName = ?', (True, chosenTribute_G, gift[0][0])) # Update query for SQL
+                cur.execute('UPDATE SendsGift SET Authorization = ?, AuthorizationDate = ? WHERE TributeID = ? and GiftName = ?', (True, giftDate, chosenTribute_G, gift[0][0])) # Update query for SQL
                 window.Element('gift').Update(values=getGifts(chosenTribute_G)) # Finally update and re-display
 
     elif event == 'Return To Main':
