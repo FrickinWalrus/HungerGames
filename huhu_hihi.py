@@ -65,13 +65,25 @@ def login_check():
             # let's first check if this is a student
             cur.execute('SELECT MSSN FROM Mentor WHERE MSSN = ?', (uid,))
             row_mentor = cur.fetchone()
-            if row_mentor is not None:
-                login_user_type = 'Mentor'
-
+#ayceayce
+            if row_mentor is None:
+                #not a mentor, check for game maker
+                cur.execute('SELECT GameMakerSSN FROM GameMaker WHERE GameMakerSSN = ?', (uid,))
+                row_gamemaker = cur.fetchone()
+                if row_gamemaker is None:
+                    sg.popup('User type error! Please contact the admin.')
+                    window.close()
+                    window = window_login()
+                else:
+                    login_user_type = 'Game Maker'
+                    sg.popup('Welcome, ' + login_user_name + ' (Game Maker)')
+                    window.close()
+                    window = window_gamemaker()
             else:
-                sg.popup('No such mentor found.')
+                login_user_type = 'Mentor'
+                sg.popup('Welcome, ' + login_user_name + ' (Mentor)')
                 window.close()
-                window=window_login()
+                window = window_mentor()
             return (login_user_type)
 
 def window_mentor():
@@ -129,6 +141,78 @@ def window_tribute_activity():
               [sg.Button('Return To Main')]]
     return sg.Window('Gifts Window', layout)
 
+#ayceayce
+def window_gamemaker():
+
+    layout = [[sg.Text('Welcome ' + login_user_name, font='Helvetica 12 bold', pad=(0,5))],
+              [sg.Button('Games')],
+              [sg.Button('Mentors')],
+              [sg.Button('Record Interaction', pad=((5,192),(0,0))),sg.Button('Logout',)]]
+    return sg.Window('Game Maker Window', layout)
+
+def window_games():
+    games = []
+    # get name, id , status of tribute
+    for row in cur.execute('''SELECT Year, Description
+                                  FROM GameWithAdmin
+                                  '''):
+        games.append(row)
+
+    layout = [[sg.Text('Choose a game:', pad=((0,0),(10,25))), sg.Combo(games,size=(40,len(games)), pad=((5,0),(10,25)),key='chosen_game'), sg.Button("See Rules")],
+              [sg.Listbox(values, size=(80, 10), key='rule')],
+              [sg.Text('New Rule: '), sg.Input(key='new_rule'), sg.Button('Set a new rule')],
+              [sg.Button('Return To Main')]]
+    return sg.Window("Game Window", layout)
+
+def button_see_rules(values):
+    game = values["chosen_game"]
+    if game == "":
+        sg.popup("Please choose a game")
+    else:
+        game_year = game[0]
+        rules = []
+
+        for row in cur.execute('''SELECT Rule_Year, Content
+                                      FROM AddsRules
+                                      WHERE Rule_Year = ?''', (game_year,)):
+            rules.append(row)
+        window.Element("rule").Update(values=rules)
+
+def button_set_rule(values):
+    newrule = values["new_rule"]
+    year = values["chosen_game"][0]
+    cur.execute('INSERT INTO AddsRules VALUES (?,?,?)', (login_user_id, year, newrule))
+    window.Element('new_rule').Update(value="")
+    sg.popup("New rule added successfully!")
+
+def window_award():
+    mentors = []
+    for row in cur.execute('''SELECT MSSN, UName, USurname
+                                  FROM Mentor, User
+                                  WHERE MSSN=SSN
+                                  AND MSSN = ?''', (login_user_id,)):
+        mentors.append(row)
+
+    layout = [[sg.Text('Choose a mentor:', pad=((0,0),(10,25))), sg.Combo(mentors,size=(40,len(mentors)), pad=((5,0),(10,25)),key='chosen_mentor')],
+              [sg.Button("Give Award")],
+              [sg.Button('Return To Main')]]
+
+    return sg.Window('Award Window', layout)
+
+def window_interaction():
+    all_tributes = []
+    for row in cur.execute('''SELECT TName, TSurname
+                                  FROM Tribute
+                                  WHERE Status="Alive"
+                                  '''):
+        all_tributes.append(row)
+
+    layout = [[sg.Text('Choose a source tribute:', pad=((0,0),(10,25))), sg.Combo(all_tributes,size=(40,len(all_tributes)), pad=((5,0),(10,25)),key='chosen_st')],
+              [sg.Text('Choose a target tribute:', pad=((0, 0), (10, 25))),sg.Combo(all_tributes, size=(40, len(all_tributes)), pad=((5, 0), (10, 25)), key='chosen_tt')]
+              [sg.Text('New Interaction: '), sg.Input(key='new_interaction'), sg.Button('Record a new interaction')],
+              [sg.Button('Return To Main')]]
+    return sg.Window('Interaction Window', layout)
+#ayceayce
 # ----------- MAIN CODE -----------
 window = window_login()
 while True:
@@ -155,11 +239,18 @@ while True:
             chosenTribute_G = values['chosen_tribute'][0]
             window.close()
             window, chosenTribute_G = window_gifts()
-
+#ayceayce
+    elif event == "Games":
+            window.close()
+            window = window_games()
+    elif event == "See Rules":
+        button_see_rules(values)
     elif event == 'Logout':
         window.close()
         window = window_login()
-
+    elif event == 'Set a new rule':
+        button_set_rule(values)
+#ayceayce
     elif event == "Authorize":
         giftDate = datetime.now()
         giftDate = giftDate.strftime('%Y-%m-%d %H:%M:%S"')
@@ -177,6 +268,9 @@ while True:
         if login_user_type == 'Mentor':
             window.close()
             window = window_mentor()
+        if login_user_type == 'Game Maker':
+            window.close()
+            window = window_gamemaker()
         else:
             window.close()
             window = window_login()
