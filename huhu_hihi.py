@@ -1,6 +1,5 @@
 # import
-import random
-from datetime import datetime
+
 import os
 import sqlite3
 import PySimpleGUI as sg
@@ -195,13 +194,14 @@ def button_set_rule(values):
 
 def window_award():
     mentors = []
-    for row in cur.execute('''SELECT MSSN, UName, USurname
-                                  FROM Mentor, User
-                                  WHERE MSSN=SSN
-                                  AND MSSN = ?''', (login_user_id,)):
+    for row in cur.execute('''SELECT u.SSN, u.UName, u.USurname
+                                  FROM Mentor m, User u
+                                  WHERE m.MSSN=u.SSN
+                                  '''):
         mentors.append(row)
 
     layout = [[sg.Text('Choose a mentor:', pad=((0,0),(10,25))), sg.Combo(mentors,size=(40,len(mentors)), pad=((5,0),(10,25)),key='chosen_mentor')],
+              [sg.Text('Name of the Award:'), sg.Input(key='award_name')],
               [sg.Button("Give Award")],
               [sg.Button('Return To Main')]]
 
@@ -209,18 +209,28 @@ def window_award():
 
 def window_interaction():
     all_tributes = []
-    for row in cur.execute('''SELECT TName, TSurname
+    for row in cur.execute('''SELECT TributeID, TName, TSurname
                                   FROM Tribute
                                   WHERE Status="Alive"
                                   '''):
         all_tributes.append(row)
 
-    layout = [[sg.Text('Choose a source tribute:', pad=((0,0),(10,25))), sg.Combo(all_tributes,size=(40,len(all_tributes)), pad=((5,0),(10,25)),key='chosen_st')],
-              [sg.Text('Choose a target tribute:', pad=((0, 0), (10, 25))),sg.Combo(all_tributes, size=(40, len(all_tributes)), pad=((5, 0), (10, 25)), key='chosen_tt')]
-              [sg.Text('New Interaction: '), sg.Input(key='new_interaction'), sg.Button('Record a new interaction')],
+    layout = [[sg.Text('Choose a source tribute:', pad=((0,0),(10,25))), sg.Combo(all_tributes, size=(40,len(all_tributes)), pad=((5,0),(10,25)),key='chosen_st')],
+              [sg.Text('Choose a target tribute:', pad=((0, 0), (10, 25))),sg.Combo(all_tributes, size=(40, len(all_tributes)), pad=((5, 0), (10, 25)), key='chosen_tt')],
+              [sg.Text('New Interaction: '), sg.Input(key='new_interaction'), sg.Button('Record a new Interaction')],
               [sg.Button('Return To Main')]]
     return sg.Window('Interaction Window', layout)
 #ayceayce
+#dusdus
+def button_give_award(values):
+    award_mentor = values['chosen_mentor'][0]
+    award_name = values['award_name']
+    cur.execute('INSERT INTO ReceiveAward VALUES (?,?)',(award_name,award_mentor))
+    sg.popup("Award given to chosen Mentor!")
+    window.Element('award_name').Update(value='')
+
+#dusdus
+
 # ----------- MAIN CODE -----------
 window = window_login()
 while True:
@@ -251,14 +261,51 @@ while True:
     elif event == "Games":
             window.close()
             window = window_games()
+
     elif event == "See Rules":
         button_see_rules(values)
+
     elif event == 'Logout':
         window.close()
         window = window_login()
     elif event == 'Set a new rule':
         button_set_rule(values)
 #ayceayce
+#dusdus
+    elif event == "Mentors":
+        window.close()
+        window = window_award()
+
+    elif event == "Give Award":
+        if values['chosen_mentor'] == '':
+            sg.popup_no_buttons("Please select a mentor.", title='',auto_close=True, auto_close_duration=2)
+        else:
+            button_give_award(values)
+
+    elif event == "Record Interaction":
+        window.close()
+        window = window_interaction()
+
+    elif event == "Record a new Interaction":
+        interactionDate = datetime.now()
+        interactionDate = interactionDate.strftime('%Y-%m-%d %H:%M:%S"')
+        new_interaction = values['new_interaction']
+        source_tribute = values['chosen_st']
+        target_tribute = values['chosen_tt']
+        #print(source_tribute)
+        #print(target_tribute)
+        if not source_tribute:
+            sg.popup_no_buttons("Please choose a source tribute.", title='', auto_close=True, auto_close_duration=2)
+        elif not target_tribute:
+            sg.popup_no_buttons("Please choose a target tribute.", title='', auto_close=True, auto_close_duration=2)
+        elif new_interaction == '':
+            sg.popup_no_buttons("Please enter a valid interaction.", title='',auto_close=True, auto_close_duration=2)
+        else:
+            cur.execute('INSERT INTO Interaction VALUES (?,?,?,?)', (interactionDate,new_interaction,source_tribute[0] ,target_tribute[0]))
+            window.Element('new_interaction').Update(value='')
+            #print(new_interaction)
+ #dusdus
+
     elif event == "Authorize":
         giftDate = datetime.now()
         giftDate = giftDate.strftime('%Y-%m-%d %H:%M:%S"')
