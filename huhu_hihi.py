@@ -185,6 +185,14 @@ def button_set_rule(values):
     window.Element('new_rule').Update(value="")
     sg.popup("New rule added successfully!")
 
+    ruless = []
+    for row in cur.execute('''SELECT Rule_Year, Content
+                                  FROM AddsRules
+                                  WHERE Rule_Year = ?''', (year,)):
+        ruless.append(row)
+
+    window.Element("rule").Update(values=ruless)
+
 def window_award():
     mentors = []
     for row in cur.execute('''SELECT MSSN, UName, USurname
