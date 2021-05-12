@@ -261,7 +261,7 @@ def window_sponsor():
     layout = [[sg.Text('Welcome ' + login_user_name, font='Helvetica 12 bold', pad=(0,5))],
               [sg.Text('Your Credit Card Number:'+ str(credit_card_no)), sg.Button('Update')],
               [sg.Text('Filter Tributes By')],
-              [sg.Text('Game:'), sg.Combo(values=['2021','2020'], key='chosen_game'),sg.Text('Status:'),sg.Combo(values=['Dead', 'Alive'], key='chosen_status'),sg.Text('District:'),sg.Combo(values=['1','2','3','5','6'], key='chosen_district'),sg.Text('Name:'),sg.Combo(tribute_spo, key='chosen_name'),sg.Button('List Tributes')],
+              [sg.Text('Game:'), sg.Combo(values=['2021','2020', ''], key='chosen_game'),sg.Text('Status:'),sg.Combo(values=['Dead', 'Alive',''], key='chosen_status'),sg.Text('District:'),sg.Combo(values=['1','2','3','5','6',''], key='chosen_district'),sg.Text('Name:'),sg.Combo(tribute_spo, key='chosen_name'),sg.Button('List Tributes')],
               [sg.Listbox((),size=(40, 10),key='tribute4gift')],
               [sg.Text('Choose a gift:', pad=((0, 0), (10, 25))),sg.Combo(available_gifts, size=(40, len(available_gifts)), pad=((5, 0), (10, 25)), key='gift4tribute')],
               [sg.Button('Send Gift'), sg.Button('Logout')]]
