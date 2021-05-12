@@ -70,9 +70,18 @@ def login_check():
                 cur.execute('SELECT GameMakerSSN FROM GameMaker WHERE GameMakerSSN = ?', (uid,))
                 row_gamemaker = cur.fetchone()
                 if row_gamemaker is None:
-                    sg.popup('User type error! Please contact the admin.')
-                    window.close()
-                    window = window_login()
+                    #not a game maker, check for sponsor, dusdus
+                    cur.execute('SELECT SpSSN FROM Sponsor WHERE SpSSN = ?', (uid,))
+                    row_sponsor = cur.fetchone()
+                    if row_sponsor is None:
+                        sg.popup('User type error! Please contact the admin.')
+                        window.close()
+                        window = window_login()
+                    else:
+                        login_user_type= 'Sponsor'
+                        sg.popup('Welcome, ' + login_user_name + ' (Sponsor)')
+                        window.close()
+                        window = window_sponsor()
                 else:
                     login_user_type = 'Game Maker'
                     sg.popup('Welcome, ' + login_user_name + ' (Game Maker)')
@@ -229,6 +238,51 @@ def button_give_award(values):
     sg.popup("Award given to chosen Mentor!")
     window.Element('award_name').Update(value='')
 
+def window_sponsor():
+    tribute_spo = []
+    available_gifts = []
+    credit_card_no = []
+    for row in cur.execute('''SELECT Game_year,TributeID, TName, TSurname,DistrictID, Status
+                                      FROM Tribute
+                                      '''):
+        tribute_spo.append(row)
+
+    for row2 in cur.execute('''SELECT *
+                                         FROM Gift
+                                         '''):
+        available_gifts.append(row2)
+
+    for row3 in cur.execute('''SELECT CardNumber
+                                         FROM Sponsor
+                                         WHERE SpSSN= ?''', (login_user_id,)):
+        credit_card_no.append(row3)
+    print(credit_card_no[0])
+    layout = [[sg.Text('Welcome ' + login_user_name, font='Helvetica 12 bold', pad=(0,5))],
+              [sg.Text('Your Credit Card Number:'+ str(credit_card_no)), sg.Button('Update')],
+              [sg.Text('Choose a tribute:', pad=((0,0),(10,25))), sg.Combo(tribute_spo, size=(40,len(tribute_spo)), pad=((5,0),(10,25)),key='tribute4gift')],
+              [sg.Text('Choose a gift:', pad=((0, 0), (10, 25))),sg.Combo(available_gifts, size=(40, len(available_gifts)), pad=((5, 0), (10, 25)), key='gift4tribute')],
+              [sg.Button('Send Gift'), sg.Button('Logout')]]
+    return sg.Window('Sponsor Login', layout)
+
+#def send_gift(values):
+    #tribute= values['tribute4gift']
+   # gift = values['gift4tribute']
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #dusdus
 
 # ----------- MAIN CODE -----------
@@ -292,8 +346,7 @@ while True:
         new_interaction = values['new_interaction']
         source_tribute = values['chosen_st']
         target_tribute = values['chosen_tt']
-        #print(source_tribute)
-        #print(target_tribute)
+
         if not source_tribute:
             sg.popup_no_buttons("Please choose a source tribute.", title='', auto_close=True, auto_close_duration=2)
         elif not target_tribute:
@@ -303,7 +356,6 @@ while True:
         else:
             cur.execute('INSERT INTO Interaction VALUES (?,?,?,?)', (interactionDate,new_interaction,source_tribute[0] ,target_tribute[0]))
             window.Element('new_interaction').Update(value='')
-            #print(new_interaction)
  #dusdus
 
     elif event == "Authorize":
