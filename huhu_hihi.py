@@ -380,6 +380,10 @@ while True:
             sg.popup_no_buttons("Enter a valid Credit Card Number consisting of numbers.", title='', auto_close=True,
                                 auto_close_duration=2)
             window.Element('new_credit_card_no').Update(value='')
+
+
+
+
 #dusdus
 
     elif event == "Authorize":
@@ -399,10 +403,10 @@ while True:
         if login_user_type == 'Mentor':
             window.close()
             window = window_mentor()
-        if login_user_type == 'Game Maker':
+        elif login_user_type == 'Game Maker':
             window.close()
             window = window_gamemaker()
-        if login_user_type == 'Sponsor':
+        elif login_user_type == 'Sponsor':
             window.close()
             window = window_sponsor()
         else:
