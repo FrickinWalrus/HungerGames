@@ -271,6 +271,8 @@ def button_send_gift(values):
     print(tribute)
     cur.execute('INSERT INTO SendsGift VALUES (?,?,?,?,?,?)', (gift[0], login_user_id, tribute[1], gift[1], None, False))
     sg.popup("Your Gift has been added to the Pending List!")
+    window.Element('tribute4gift').Update(value='')
+    window.Element('gift4tribute').Update(value='')
 
 def window_update_credit_card():
 
@@ -338,7 +340,7 @@ while True:
 
     elif event == "Record a new Interaction":
         interactionDate = datetime.now()
-        interactionDate = interactionDate.strftime('%Y-%m-%d %H:%M:%S"')
+        interactionDate = interactionDate.strftime('%Y-%m-%d %H:%M')
         new_interaction = values['new_interaction']
         source_tribute = values['chosen_st']
         target_tribute = values['chosen_tt']
@@ -351,7 +353,10 @@ while True:
             sg.popup_no_buttons("Please enter a valid interaction.", title='',auto_close=True, auto_close_duration=2)
         else:
             cur.execute('INSERT INTO Interaction VALUES (?,?,?,?)', (interactionDate,new_interaction,source_tribute[0] ,target_tribute[0]))
+            sg.popup('Tribute Activity Recorded.')
             window.Element('new_interaction').Update(value='')
+            window.Element('chosen_st').Update(value='')
+            window.Element('chosen_tt').Update(value='')
 
     elif event == 'Send Gift':
         if not values['tribute4gift']:
@@ -361,13 +366,13 @@ while True:
         else:
             button_send_gift(values)
 
-    elif event == 'Update' :
+    elif event == 'Update':
         window.close()
         window = window_update_credit_card()
 
     elif event == 'Update My Credit Card Number':
         new_cc_no = values['new_credit_card_no']
-        print(len(str(new_cc_no)))
+        #print(len(str(new_cc_no)))
         if new_cc_no.isnumeric():
             if len(str(new_cc_no)) == 16:
                 cur.execute('UPDATE Sponsor SET CardNumber = ? WHERE SpSSN = ?',(new_cc_no,login_user_id))
@@ -380,9 +385,6 @@ while True:
             sg.popup_no_buttons("Enter a valid Credit Card Number consisting of numbers.", title='', auto_close=True,
                                 auto_close_duration=2)
             window.Element('new_credit_card_no').Update(value='')
-
-
-
 
 #dusdus
 
