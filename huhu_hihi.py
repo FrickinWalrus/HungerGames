@@ -278,7 +278,7 @@ def button_list_tributes(values):
 
     if len(name) == 0 and len(district) == 0 and len(status) == 0 and len(game) ==0:
 
-        for row in cur.execute('''SELECT *
+        for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
                                          FROM Tribute
                                         '''):
             filter_result.append(row)
