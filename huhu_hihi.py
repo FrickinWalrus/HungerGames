@@ -264,24 +264,20 @@ def window_sponsor():
               [sg.Button('Send Gift'), sg.Button('Logout')]]
     return sg.Window('Sponsor Login', layout)
 
-#def send_gift(values):
-    #tribute= values['tribute4gift']
-   # gift = values['gift4tribute']
+def button_send_gift(values):
+    tribute = values['tribute4gift']
+    gift = values['gift4tribute']
+    print(gift)
+    print(tribute)
+    cur.execute('INSERT INTO SendsGift VALUES (?,?,?,?,?,?)', (gift[0], login_user_id, tribute[1], gift[1], None, False))
+    sg.popup("Your Gift has been added to the Pending List!")
 
+def window_update_credit_card():
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    layout = [[sg.Text('Please enter your new Credit Card Number:'), sg.Input(key='new_credit_card_no')],
+              [sg.Button('Update My Credit Card Number')],
+              [sg.Button('Return To Main')]]
+    return sg.Window('Update Credit Card Number', layout)
 
 #dusdus
 
@@ -356,7 +352,35 @@ while True:
         else:
             cur.execute('INSERT INTO Interaction VALUES (?,?,?,?)', (interactionDate,new_interaction,source_tribute[0] ,target_tribute[0]))
             window.Element('new_interaction').Update(value='')
- #dusdus
+
+    elif event == 'Send Gift':
+        if not values['tribute4gift']:
+            sg.popup_no_buttons("Please choose a tribute.", title='', auto_close=True, auto_close_duration=2)
+        elif not values['gift4tribute']:
+            sg.popup_no_buttons("Please choose a gift.", title='', auto_close=True, auto_close_duration=2)
+        else:
+            button_send_gift(values)
+
+    elif event == 'Update' :
+        window.close()
+        window = window_update_credit_card()
+
+    elif event == 'Update My Credit Card Number':
+        new_cc_no = values['new_credit_card_no']
+        print(len(str(new_cc_no)))
+        if new_cc_no.isnumeric():
+            if len(str(new_cc_no)) == 16:
+                cur.execute('UPDATE Sponsor SET CardNumber = ? WHERE SpSSN = ?',(new_cc_no,login_user_id))
+                sg.popup('Your Credit Card NUmber is Updated!')
+                window.Element('new_credit_card_no').Update(value='')
+            else:
+                sg.popup_no_buttons("A Valid Credit Card Number should contain 16 numbers.", title='', auto_close=True, auto_close_duration=2)
+                window.Element('new_credit_card_no').Update(value='')
+        else:
+            sg.popup_no_buttons("Enter a valid Credit Card Number consisting of numbers.", title='', auto_close=True,
+                                auto_close_duration=2)
+            window.Element('new_credit_card_no').Update(value='')
+#dusdus
 
     elif event == "Authorize":
         giftDate = datetime.now()
@@ -378,6 +402,9 @@ while True:
         if login_user_type == 'Game Maker':
             window.close()
             window = window_gamemaker()
+        if login_user_type == 'Sponsor':
+            window.close()
+            window = window_sponsor()
         else:
             window.close()
             window = window_login()
