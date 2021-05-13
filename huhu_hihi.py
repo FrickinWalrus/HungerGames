@@ -1,5 +1,5 @@
 # import
-
+import random
 import os
 import sqlite3
 import PySimpleGUI as sg
@@ -105,7 +105,8 @@ def window_mentor():
     layout = [[sg.Text('Welcome ' + login_user_name, font='Helvetica 12 bold', pad=(0,5))],
               [sg.Text('Choose a tribute:', pad=((0,0),(10,25))), sg.Combo(tributes,size=(40,len(tributes)), pad=((5,0),(10,25)),key='chosen_tribute')],
               [sg.Button('See Tribute Activity')],
-              [sg.Button('See Gifts For The Tribute', pad=((5,192),(0,0))),sg.Button('Logout',)]]
+              [sg.Button('See Gifts For The Tribute', pad=((5,192),(0,0))),sg.Button('Logout',)],
+              [sg.Button('My Awards')]]
     return sg.Window('Mentor Window', layout)
 
 
@@ -148,6 +149,16 @@ def window_tribute_activity():
     layout = [[sg.Listbox(activities, size=(100, 10), key='activities')],
               [sg.Button('Return To Main')]]
     return sg.Window('Gifts Window', layout)
+def my_awards():
+    awards=[]
+    for row in cur.execute('''SELECT AwardName
+                                  FROM ReceiveAward
+                                  WHERE MentorSSN = ?''', (login_user_id,)):
+        awards.append(row)
+    layout = [[sg.Text('Your Received Awards', font='Helvetica 12 bold', pad=(0, 5))],
+              [sg.Listbox(awards, size=(80, 10), key='rule')],
+              [sg.Button('Return To Main'), sg.Button('Logout', )]]
+    return sg.Window('Game Maker Window', layout)
 
 #ayceayce
 def window_gamemaker():
@@ -155,7 +166,9 @@ def window_gamemaker():
     layout = [[sg.Text('Welcome ' + login_user_name, font='Helvetica 12 bold', pad=(0,5))],
               [sg.Button('Games')],
               [sg.Button('Mentors')],
-              [sg.Button('Record Interaction', pad=((5,192),(0,0))),sg.Button('Logout',)]]
+              [sg.Button('Record Interaction', pad=((5,192),(0,0)))],
+              [sg.Button('Change Tribute Status', pad=((5,192),(0,0)))],
+              [sg.Button('Logout',)]]
     return sg.Window('Game Maker Window', layout)
 
 def window_games():
@@ -220,7 +233,7 @@ def window_interaction():
     all_tributes = []
     for row in cur.execute('''SELECT TributeID, TName, TSurname
                                   FROM Tribute
-                                  WHERE Status="Alive"
+                                  WHERE Status<>"Dead"
                                   '''):
         all_tributes.append(row)
 
@@ -237,6 +250,29 @@ def button_give_award(values):
     cur.execute('INSERT INTO ReceiveAward VALUES (?,?)',(award_name,award_mentor))
     sg.popup("Award given to chosen Mentor!")
     window.Element('award_name').Update(value='')
+
+def window_trb_status():
+    all_tributes = []
+    all_status=['Alive','Dead','Injured']
+    for row in cur.execute('''SELECT TributeID, TName, TSurname,Status
+                                      FROM Tribute'''):
+        all_tributes.append(row)
+    layout = [[sg.Text('Choose a tribute:', pad=((0,0),(10,25))), sg.Listbox(all_tributes, size=(40,len(all_tributes)), pad=((5,0),(10,25)),key='chosen_trb')],
+             [sg.Text('Possible Status'), sg.Listbox(all_status,key='chosen_stat'),sg.Button('Set Status')],
+              [sg.Button('Return To Main')]]
+    return sg.Window('Tribute Status Window', layout)
+
+def set_status():
+    if values['chosen_trb'] == []:
+        sg.popup_no_buttons("Please select a tribute.", title='', auto_close=True, auto_close_duration=2)
+    elif values['chosen_stat']==[]:
+        sg.popup_no_buttons("Please select status.", title='', auto_close=True, auto_close_duration=2)
+    else:
+        if values['chosen_stat'][0]==values['chosen_trb'][0][3]:
+            sg.popup_no_buttons('The status is not changed', title='', auto_close=True, auto_close_duration=2)
+        else:
+            cur.execute('UPDATE Tribute SET Status = ? WHERE TributeID=?',(values['chosen_stat'][0],values['chosen_trb'][0][0]))
+            sg.popup_no_buttons('The status is changed', title='', auto_close=True, auto_close_duration=2)
 
 def window_sponsor():
     credit_card_no = []
@@ -255,11 +291,11 @@ def window_sponsor():
     for row3 in cur.execute('''SELECT CardNumber
                                          FROM Sponsor
                                          WHERE SpSSN= ?''', (login_user_id,)):
-        credit_card_no.append(row3)
+        credit_card_no.append(row3[0])
 
 
     layout = [[sg.Text('Welcome ' + login_user_name, font='Helvetica 12 bold', pad=(0,5))],
-              [sg.Text('Your Credit Card Number:'+ str(credit_card_no)), sg.Button('Update')],
+              [sg.Text('Your Credit Card Number:'+ str(credit_card_no[0])), sg.Button('Update')],
               [sg.Text('Filter Tributes By')],
               [sg.Text('Game:'), sg.Combo(values=['2021','2020', ''], key='chosen_game'),sg.Text('Status:'),sg.Combo(values=['Dead', 'Alive',''], key='chosen_status'),sg.Text('District:'),sg.Combo(values=['1','2','3','5','6',''], key='chosen_district'),sg.Text('Name:'),sg.Combo(tribute_spo, key='chosen_name'),sg.Button('List Tributes')],
               [sg.Listbox((),size=(40, 10),key='tribute4gift')],
@@ -348,12 +384,22 @@ def button_list_tributes(values):
 def button_send_gift(values):
     tribute = values['tribute4gift']
     gift = values['gift4tribute']
+
+    cur.execute('''SELECT Status
+            FROM Tribute
+            WHERE TributeID=?''', (values['tribute4gift'][0][0],))
+    status = cur.fetchone()
+    if status[0]=='Dead':  # the dead tributes can not receive gifts
+        sg.popup_no_buttons("You can not send gifts to deceased tributes.", title='', auto_close=True,
+                        auto_close_duration=2)
+
     #print(gift)
     #print(tribute)
-    cur.execute('INSERT INTO SendsGift VALUES (?,?,?,?,?,?)', (gift[0], login_user_id, tribute[0][0], gift[1], None, False))
-    sg.popup("Your Gift has been added to the Pending List!")
-    window.Element('tribute4gift').Update(values=[])
-    window.Element('gift4tribute').Update(value='')
+    else:
+        cur.execute('INSERT INTO SendsGift VALUES (?,?,?,?,?,?)', (gift[0], login_user_id, tribute[0][0], gift[1], None, False))
+        sg.popup("Your Gift has been added to the Pending List!")
+        window.Element('tribute4gift').Update(values=[])
+        window.Element('gift4tribute').Update(value='')
 
 def window_update_credit_card():
 
@@ -382,6 +428,10 @@ while True:
         else:
             window.close()
             window = window_tribute_activity()
+
+    elif event=='My Awards': # mentors can see their received awards
+        window.close()
+        window=my_awards()
 
     elif event == 'See Gifts For The Tribute':
         if values['chosen_tribute'] == '':
@@ -438,7 +488,13 @@ while True:
             window.Element('new_interaction').Update(value='')
             window.Element('chosen_st').Update(value='')
             window.Element('chosen_tt').Update(value='')
-
+    elif event=='Change Tribute Status': # game makers can change the status of tributes
+        window.close()
+        window = window_trb_status()
+    elif event=='Set Status': #set status alive, dead, injured
+        set_status()
+        window.close()
+        window=window_trb_status()
     elif event == 'List Tributes':
         button_list_tributes(values)
 
