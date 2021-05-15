@@ -282,6 +282,7 @@ def window_sponsor():
                               FROM Tribute'''):
         tribute_spo.append(row)
     tribute_spo.append('')
+    tribute_spo = list(set(tribute_spo))
     for row2 in cur.execute('''SELECT *
                                FROM Gift'''):
         available_gifts.append(row2)
