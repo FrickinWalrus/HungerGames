@@ -23,8 +23,7 @@ def window_login():
     layout = [[sg.Text('Welcome to the Hunger Games Management System.', pad=((40,40),(0,5)), font='Helvetica 12 bold')],
               [sg.Text('Please enter your information.', pad=((0,0),(0,5)))],
               [sg.Text('SSN:', size=(10, 1), pad=((0,75),(0,0))), sg.Input(size=(20, 1), key='id')],
-              [sg.Text('Password:', size=(20, 1), pad=((0,0),(0,15))),
-               sg.Input(size=(20, 1), pad=((0,0),(0,15)), key='password')],
+              [sg.Text('Password:', size=(20, 1), pad=((0,0),(0,15))), sg.Input(size=(20, 1), pad=((0,0),(0,15)), key='password')],
               [sg.Exit(),sg.Button('Login',pad=((400,0),(0,0)))]]
 
     return sg.Window('Login Window', layout, size=(500,160))
@@ -99,12 +98,12 @@ def window_mentor():
     tributes = []
     # get name, id , status of tribute
     for row in cur.execute('''SELECT TributeID, TName, TSurname, Status
-                              FROM Tribute, Mentor
-                              WHERE MSSN=Mentor_SSN AND MSSN = ?''', (login_user_id,)):
+                                  FROM Tribute, Mentor
+                                  WHERE MSSN=Mentor_SSN
+                                  AND MSSN = ?''', (login_user_id,)):
         tributes.append(row)
     layout = [[sg.Text('Welcome ' + login_user_name, font='Helvetica 12 bold', pad=(0,5))],
-              [sg.Text('Choose a tribute:', pad=((0,0),(10,25))),
-               sg.Combo(tributes,size=(40,len(tributes)), pad=((5,0),(10,25)),key='chosen_tribute')],
+              [sg.Text('Choose a tribute:', pad=((0,0),(10,25))), sg.Combo(tributes,size=(40,len(tributes)), pad=((5,0),(10,25)),key='chosen_tribute')],
               [sg.Button('See Tribute Activity')],
               [sg.Button('See Gifts For The Tribute', pad=((5,192),(0,0))),sg.Button('Logout',)],
               [sg.Button('My Awards')]]
@@ -122,8 +121,8 @@ def window_gifts():
 def getGifts(tribute):
     gifts = []
     for row in cur.execute('''SELECT S.GiftName, S.Amount, S.Authorization, S.AuthorizationDate
-                              FROM SendsGift S, Tribute T
-                              WHERE S.TributeID = T.TributeID and T.Mentor_SSN = ? and T.TributeID = ? ''',
+                            FROM SendsGift S, Tribute T
+                            WHERE S.TributeID = T.TributeID and T.Mentor_SSN = ? and T.TributeID = ? ''',
                             (login_user_id, tribute)):
         row = list(row)
         if row[2] == 1:
@@ -153,8 +152,8 @@ def window_tribute_activity():
 def my_awards():
     awards=[]
     for row in cur.execute('''SELECT AwardName
-                              FROM ReceiveAward
-                              WHERE MentorSSN = ?''', (login_user_id,)):
+                                  FROM ReceiveAward
+                                  WHERE MentorSSN = ?''', (login_user_id,)):
         awards.append(row)
     layout = [[sg.Text('Your Received Awards', font='Helvetica 12 bold', pad=(0, 5))],
               [sg.Listbox(awards, size=(80, 10), key='rule')],
@@ -176,7 +175,8 @@ def window_games():
     games = []
     # get name, id , status of tribute
     for row in cur.execute('''SELECT Year, Description
-                              FROM GameWithAdmin'''):
+                                  FROM GameWithAdmin
+                                  '''):
         games.append(row)
 
     layout = [[sg.Text('Choose a game:', pad=((0,0),(10,25))), sg.Combo(games,size=(40,len(games)), pad=((5,0),(10,25)),key='chosen_game'), sg.Button("See Rules")],
@@ -187,14 +187,15 @@ def window_games():
 
 def button_see_rules(values):
     game = values["chosen_game"]
-    year = game[0]
     if game == "":
         sg.popup("Please choose a game")
     else:
+        game_year = game[0]
         rules = []
+
         for row in cur.execute('''SELECT Rule_Year, Content
-                                  FROM AddsRules
-                                  WHERE Rule_Year = ?''', (year,)):
+                                      FROM AddsRules
+                                      WHERE Rule_Year = ?''', (game_year,)):
             rules.append(row)
         window.Element("rule").Update(values=rules)
 
@@ -205,19 +206,20 @@ def button_set_rule(values):
     window.Element('new_rule').Update(value="")
     sg.popup("New rule added successfully!")
 
-    rules = []
+    ruless = []
     for row in cur.execute('''SELECT Rule_Year, Content
-                              FROM AddsRules
-                              WHERE Rule_Year = ?''', (year,)):
-        rules.append(row)
+                                  FROM AddsRules
+                                  WHERE Rule_Year = ?''', (year,)):
+        ruless.append(row)
 
-    window.Element("rule").Update(values=rules)
+    window.Element("rule").Update(values=ruless)
 
 def window_award():
     mentors = []
     for row in cur.execute('''SELECT u.SSN, u.UName, u.USurname
-                              FROM Mentor m, User u
-                              WHERE m.MSSN=u.SSN'''):
+                                  FROM Mentor m, User u
+                                  WHERE m.MSSN=u.SSN
+                                  '''):
         mentors.append(row)
 
     layout = [[sg.Text('Choose a mentor:', pad=((0,0),(10,25))), sg.Combo(mentors,size=(40,len(mentors)), pad=((5,0),(10,25)),key='chosen_mentor')],
@@ -230,14 +232,17 @@ def window_award():
 def window_interaction():
     all_tributes = []
     for row in cur.execute('''SELECT TributeID, TName, TSurname
-                              FROM Tribute
-                              WHERE Status<>"Dead"'''):
+                                  FROM Tribute
+                                  WHERE Status<>"Dead"
+                                  '''):
         all_tributes.append(row)
 
     layout = [[sg.Text('Choose a source tribute:', pad=((0,0),(10,25))), sg.Combo(all_tributes, size=(40,len(all_tributes)), pad=((5,0),(10,25)),key='chosen_st')],
               [sg.Text('Choose a target tribute:', pad=((0, 0), (10, 25))),sg.Combo(all_tributes, size=(40, len(all_tributes)), pad=((5, 0), (10, 25)), key='chosen_tt')],
-              [sg.Text('New Interaction: '), sg.Input(key='new_interaction'), sg.Button('Record a new Interaction')],
-              [sg.Button('Return To Main')]]
+              [sg.Text('New Interaction: '), sg.Input(key='new_interaction')],
+              #[sg.Text('Enter the date of interaction.'),sg.CalendarButton("Pick date",key="date", format='%Y:%m:%d'),
+               [sg.Text('Enter the date of interaction.'),sg.Input(key='date'),sg.Text('Time: '), sg.Input(key='time')],
+              [sg.Button('Record a new Interaction'),sg.Button('Return To Main')]]
     return sg.Window('Interaction Window', layout)
 #ayceayce
 #dusdus
@@ -252,11 +257,10 @@ def window_trb_status():
     all_tributes = []
     all_status=['Alive','Dead','Injured']
     for row in cur.execute('''SELECT TributeID, TName, TSurname,Status
-                              FROM Tribute'''):
+                                      FROM Tribute'''):
         all_tributes.append(row)
-    layout = [[sg.Text('Choose a tribute:', pad=((0,0),(10,25))),
-               sg.Listbox(all_tributes, size=(40,len(all_tributes)), pad=((5,0),(10,25)),key='chosen_trb')],
-              [sg.Text('Possible Status'), sg.Listbox(all_status,key='chosen_stat'),sg.Button('Set Status')],
+    layout = [[sg.Text('Choose a tribute:', pad=((0,0),(10,25))), sg.Listbox(all_tributes, size=(40,len(all_tributes)), pad=((5,0),(10,25)),key='chosen_trb')],
+             [sg.Text('Possible Status'), sg.Listbox(all_status,key='chosen_stat'),sg.Button('Set Status')],
               [sg.Button('Return To Main')]]
     return sg.Window('Tribute Status Window', layout)
 
@@ -277,29 +281,28 @@ def window_sponsor():
     tribute_spo = []
     available_gifts = []
     for row in cur.execute('''SELECT Game_year,TributeID, TName, TSurname
-                              FROM Tribute'''):
+                                     FROM Tribute
+                                   '''):
         tribute_spo.append(row)
-
+    tribute_spo.append('')
     for row2 in cur.execute('''SELECT *
-                               FROM Gift'''):
+                                            FROM Gift
+                                           '''):
         available_gifts.append(row2)
 
     for row3 in cur.execute('''SELECT CardNumber
-                               FROM Sponsor
-                               WHERE SpSSN= ?''', (login_user_id,)):
+                                         FROM Sponsor
+                                         WHERE SpSSN= ?''', (login_user_id,)):
         credit_card_no.append(row3[0])
 
 
     layout = [[sg.Text('Welcome ' + login_user_name, font='Helvetica 12 bold', pad=(0,5))],
               [sg.Text('Your Credit Card Number:'+ str(credit_card_no[0])), sg.Button('Update')],
               [sg.Text('Filter Tributes By')],
-              [sg.Text('Game:'), sg.Combo(values=['2021','2020', ''], key='chosen_game'),
-               sg.Text('Status:'),sg.Combo(values=['Dead', 'Alive',''], key='chosen_status'),
-               sg.Text('District:'),sg.Combo(values=['1','2','3','5','6',''], key='chosen_district'),
-               sg.Text('Name:'),sg.Combo(tribute_spo, key='chosen_name'),
-               sg.Button('List Tributes')],
+              [sg.Text('Game:'), sg.Combo(values=['2021','2020', ''], key='chosen_game'),sg.Text('Status:'),sg.Combo(values=['Dead', 'Alive','Injured',''], key='chosen_status'),sg.Text('District:'),sg.Combo(values=['1','2','3','5','6',''], key='chosen_district'),sg.Text('Name:'),sg.Combo(tribute_spo, key='chosen_name'),sg.Button('List Tributes')],
               [sg.Listbox((),size=(40, 10),key='tribute4gift')],
-              [sg.Text('Choose a gift:', pad=((0, 0), (10, 25))),sg.Combo(available_gifts, size=(40, len(available_gifts)), pad=((5, 0), (10, 25)), key='gift4tribute')],
+              [sg.Text('Choose a gift:', pad=((0, 0), (10, 25))),sg.Combo(available_gifts, size=(40, len(available_gifts)), pad=((5, 0), (10, 25)), key='gift4tribute'),
+               sg.Text(' Enter amount:', pad=((0, 0), (10, 25))),sg.Input(key='gift_amount',pad=((5, 0), (10, 25)),size=(10, 10))],
               [sg.Button('Send Gift'), sg.Button('Logout')]]
     return sg.Window('Sponsor Login', layout)
 
@@ -315,42 +318,44 @@ def button_list_tributes(values):
     if len(name) == 0 and len(district) == 0 and len(status) == 0 and len(game) ==0:
 
         for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                  FROM Tribute'''):
+                                         FROM Tribute
+                                        '''):
             filter_result.append(row)
 
     elif len(name) == 0 and len(game) != 0 and len(status) != 0 and len(district) != 0:
         filter_result = []
         for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                  FROM Tribute
-                                  WHERE Game_year= ? and Status=? and DistrictID=?''',(game, status, district)):
+                                                       FROM Tribute
+                                                       WHERE Game_year= ? and Status=? and DistrictID=?''',
+                               (game, status, district)):
             filter_result.append(row)
 
     elif len(name)== 0 and len(district)== 0:
         if len(game) == 0:
             filter_result = []
             for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                      FROM Tribute
-                                      WHERE Status=?''', (status,)):
+                                                                        FROM Tribute
+                                                                        WHERE Status=?''', (status,)):
                 filter_result.append(row)
         elif len(status) == 0:
 
             filter_result = []
             for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                      FROM Tribute
-                                      WHERE Game_year= ?''', (game,)):
+                                                     FROM Tribute
+                                                     WHERE Game_year= ?''', (game,)):
                 filter_result.append(row)
         else:
             filter_result = []
             for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                      FROM Tribute
-                                      WHERE Game_year= ? and Status=?''', (game,status)):
+                                                     FROM Tribute
+                                                     WHERE Game_year= ? and Status=?''', (game,status)):
                 filter_result.append(row)
 
     elif len(name) == 0 and len(status) == 0 and len(game) != 0 and len(district) != 0:
         filter_result = []
         for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                  FROM Tribute
-                                  WHERE Game_year= ? and DistrictID=?''', (game,  district)):
+                                                            FROM Tribute
+                                                            WHERE Game_year= ? and DistrictID=?''', (game,  district)):
             filter_result.append(row)
 
 
@@ -358,45 +363,52 @@ def button_list_tributes(values):
 
         filter_result = []
         for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                  FROM Tribute
-                                  WHERE DistrictID=?''', (district,)):
+                                                                    FROM Tribute
+                                                                    WHERE DistrictID=?''', (district,)):
             filter_result.append(row)
 
     elif len(name) == 0 and len(game)== 0 and len(status) != 0 and len(district) != 0:
         filter_result = []
         for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                  FROM Tribute
-                                  WHERE Status=? and DistrictID=?''', (status,  district)):
+                                                            FROM Tribute
+                                                            WHERE Status=? and DistrictID=?''', (status,  district)):
             filter_result.append(row)
 
     else:
+
         filter_result = []
         for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                  FROM Tribute
-                                  WHERE TName=?''', (name[2],)):
+                                                                            FROM Tribute
+                                                                            WHERE TName=?''', (name[2],)):
             filter_result.append(row)
-    window.Element('tribute4gift').Update(values=filter_result)
 
+    window.Element('tribute4gift').Update(values=filter_result)
 
 def button_send_gift(values):
     tribute = values['tribute4gift']
     gift = values['gift4tribute']
-
+    g_amount=values['gift_amount']
     cur.execute('''SELECT Status
-                   FROM Tribute
-                   WHERE TributeID=?''', (values['tribute4gift'][0][0],))
+            FROM Tribute
+            WHERE TributeID=?''', (values['tribute4gift'][0][0],))
     status = cur.fetchone()
     if status[0]=='Dead':  # the dead tributes can not receive gifts
         sg.popup_no_buttons("You can not send gifts to deceased tributes.", title='', auto_close=True,
-                         auto_close_duration=2)
-
-    #print(gift)
-    #print(tribute)
+                        auto_close_duration=2)
+    elif g_amount=='':
+        sg.popup_no_buttons("Please enter amount.", title='', auto_close=True,
+                            auto_close_duration=2)
     else:
-        cur.execute('INSERT INTO SendsGift VALUES (?,?,?,?,?,?)', (gift[0], login_user_id, tribute[0][0], gift[1], None, False))
-        sg.popup("Your Gift has been added to the Pending List!")
-        window.Element('tribute4gift').Update(values=[])
-        window.Element('gift4tribute').Update(value='')
+        try:
+            amount=int(g_amount[0])
+            cur.execute('INSERT INTO SendsGift VALUES (?,?,?,?,?,?)', (gift[0], login_user_id, tribute[0][0], g_amount[0], None, False))
+            price=gift[1]*amount
+            sg.popup("Your Gift has been added to the Pending List! Total cost: "+str(price)+" dollars")
+            window.Element('tribute4gift').Update(values=[])
+            window.Element('gift4tribute').Update(value='')
+        except:
+            sg.popup_no_buttons("Please enter an integer for amount.", title='', auto_close=True,
+                                auto_close_duration=2)
 
 def window_update_credit_card():
 
@@ -448,10 +460,8 @@ while True:
     elif event == 'Logout':
         window.close()
         window = window_login()
-
     elif event == 'Set a new rule':
         button_set_rule(values)
-
 #ayceayce
 #dusdus
     elif event == "Mentors":
@@ -469,8 +479,14 @@ while True:
         window = window_interaction()
 
     elif event == "Record a new Interaction":
-        interactionDate = datetime.now()
-        interactionDate = interactionDate.strftime('%Y-%m-%d %H:%M')
+        if values['date']=='':
+            interactionDate = datetime.now()
+            interactionDate = interactionDate.strftime('%Y-%m-%d %H:%M')
+        else:
+            date=values['date']
+            time=values['time']
+            interactionDate=date+' '+time
+
         new_interaction = values['new_interaction']
         source_tribute = values['chosen_st']
         target_tribute = values['chosen_tt']
@@ -492,7 +508,7 @@ while True:
         window = window_trb_status()
     elif event=='Set Status': #set status alive, dead, injured
         set_status()
-        window.close()
+        window.close() # in order to clean but cause glitching
         window=window_trb_status()
     elif event == 'List Tributes':
         button_list_tributes(values)
@@ -504,6 +520,8 @@ while True:
             sg.popup_no_buttons("Please choose a gift.", title='', auto_close=True, auto_close_duration=2)
         else:
             button_send_gift(values)
+            window.close()  # in order to clean but causes glitching,can be taken out
+            window=window_sponsor()
 
     elif event == 'Update':
         window.close()
@@ -536,9 +554,7 @@ while True:
             if gift[0][2] == 'Authorized': # if the gift is already authorized
                 sg.popup_no_buttons("The gift is already authorized.",title='',auto_close=True,auto_close_duration=5)
             else:
-                cur.execute('UPDATE SendsGift SET Authorization = ?, AuthorizationDate = ? '
-                            'WHERE TributeID = ? and GiftName = ?',
-                            (True, giftDate, chosenTribute_G, gift[0][0])) # Update query for SQL
+                cur.execute('UPDATE SendsGift SET Authorization = ?, AuthorizationDate = ? WHERE TributeID = ? and GiftName = ?', (True, giftDate, chosenTribute_G, gift[0][0])) # Update query for SQL
                 window.Element('gift').Update(values=getGifts(chosenTribute_G)) # Finally update and re-display
 
     elif event == 'Return To Main':
