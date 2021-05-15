@@ -150,6 +150,7 @@ def window_tribute_activity():
     layout = [[sg.Listbox(activities, size=(100, 10), key='activities')],
               [sg.Button('Return To Main')]]
     return sg.Window('Gifts Window', layout)
+
 def my_awards():
     awards=[]
     for row in cur.execute('''SELECT AwardName
@@ -245,7 +246,7 @@ def window_interaction():
               [sg.Text('New Interaction: '), sg.Input(key='new_interaction')],
               #[sg.Text('Enter the date of interaction.'),sg.CalendarButton("Pick date",key="date", format='%Y:%m:%d'),
               # [sg.Text('Enter the date of interaction.'),sg.Input(key='date'),sg.Text('Time: '), sg.Input(key='time')],
-              [sg.In(key='date', enable_events=True, visible=False), sg.CalendarButton('Calendar', target='date', format='%Y:%m:%d'),sg.Text('Time: '), sg.Input(key='time')],
+              [sg.In(key='date', enable_events=True, visible=False), sg.CalendarButton('Calendar', target='date', format='%Y-%m-%d'),sg.Text('Time: '), sg.Input(key='time')],
               [sg.Button('Record a new Interaction'),sg.Button('Return To Main')]]
     return sg.Window('Interaction Window', layout)
 #ayceayce
@@ -686,4 +687,5 @@ while True:
     elif event == sg.WIN_CLOSED or event == 'Exit':
         break
 
+#hunger games
 window.close()
