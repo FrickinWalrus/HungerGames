@@ -590,28 +590,48 @@ while True:
             else:
                 date=values['date']
                 time=values['time']
-                interactionDate=date+' '+time
+                if len(time) == 5 :
+                        if time[2] == ':' :
+                            if time[0:1].isnumeric() and time[3:4].isnumeric() :
+                                if int(time[0:2]) <= 24 and int(time[3:5]) <= 59 :
+                                        interactionDate = date + ' ' + time
 
-                new_interaction = values['new_interaction']
-                source_tribute = values['chosen_st']
-                target_tribute = values['chosen_tt']
+                                        new_interaction = values['new_interaction']
+                                        source_tribute = values['chosen_st']
+                                        target_tribute = values['chosen_tt']
 
-                if not source_tribute:
-                    sg.popup_no_buttons("Please choose a source tribute.", title='', auto_close=True, auto_close_duration=2)
-                elif not target_tribute:
-                    sg.popup_no_buttons("Please choose a target tribute.", title='', auto_close=True, auto_close_duration=2)
-                elif new_interaction == '':
-                    sg.popup_no_buttons("Please enter a valid interaction.", title='',auto_close=True, auto_close_duration=2)
-                else:
-                    cur.execute('INSERT INTO Interaction VALUES (?,?,?,?)', (interactionDate,new_interaction,source_tribute[0] ,target_tribute[0]))
-                    sg.popup('Tribute Activity Recorded.')
-                    window.Element('new_interaction').Update(value='')
-                    window.Element('chosen_st').Update(value='')
-                    window.Element('chosen_tt').Update(value='')
-                    window.Element('date').Update(value='')
+                                        if not source_tribute:
+                                            sg.popup_no_buttons("Please choose a source tribute.", title='', auto_close=True,
+                                                                auto_close_duration=2)
+                                        elif not target_tribute:
+                                            sg.popup_no_buttons("Please choose a target tribute.", title='', auto_close=True,
+                                                                auto_close_duration=2)
+                                        elif new_interaction == '':
+                                            sg.popup_no_buttons("Please enter a valid interaction.", title='', auto_close=True,
+                                                                auto_close_duration=2)
+                                        else:
+                                            cur.execute('INSERT INTO Interaction VALUES (?,?,?,?)',
+                                                        (interactionDate, new_interaction, source_tribute[0], target_tribute[0]))
+                                            sg.popup('Tribute Activity Recorded.')
+                                            window.Element('new_interaction').Update(value='')
+                                            window.Element('chosen_st').Update(value='')
+                                            window.Element('chosen_tt').Update(value='')
+                                            window.Element('date').Update(value='')
+                                            window.Element('time').Update(value='')
+                                else:
+                                    sg.popup_no_buttons("Please put a valid time from 00:00 to 23:59",
+                                                        title='', auto_close=True, auto_close_duration=2)
+                                    window.Element('time').Update(value='')
+                            else:
+                                sg.popup_no_buttons("Please put a numeric time. (ex: 12:35)",
+                                                    title='', auto_close=True, auto_close_duration=2)
+                                window.Element('time').Update(value='')
+                        else:
+                            sg.popup_no_buttons("Please put a column in between the time... ex: 00:00", title= '', auto_close=True, auto_close_duration=2)
+                            window.Element('time').Update(value='')
+                else :
+                    sg.popup_no_buttons("Please enter time in 4 figures... ex: 00:00", title='', auto_close=True, auto_close_duration=2)
                     window.Element('time').Update(value='')
-
-
 
 
 
