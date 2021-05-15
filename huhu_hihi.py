@@ -401,8 +401,8 @@ def button_send_gift(values):
         sg.popup_no_buttons("Please enter amount.", title='', auto_close=True,auto_close_duration=2)
     else:
         try:
-            amount=int(g_amount[0])
-            cur.execute('INSERT INTO SendsGift VALUES (?,?,?,?,?,?)', (gift[0], login_user_id, tribute[0][0], g_amount[0], None, False))
+            amount=int(g_amount)
+            cur.execute('INSERT INTO SendsGift VALUES (?,?,?,?,?,?)', (gift[0], login_user_id, tribute[0][0], g_amount, None, False))
             price=gift[1]*amount
             sg.popup("Your Gift has been added to the Pending List! Total cost: "+str(price)+" dollars")
             window.Element('tribute4gift').Update(values=[])
@@ -517,8 +517,6 @@ while True:
 
     elif event=='Set Status': #set status alive, dead, injured
         set_status(values)
-        #window.close() # in order to clean but cause glitching
-        #window=window_trb_status()
 
     elif event == 'List Tributes':
         button_list_tributes(values)
@@ -530,8 +528,7 @@ while True:
             sg.popup_no_buttons("Please choose a gift.", title='', auto_close=True, auto_close_duration=2)
         else:
             button_send_gift(values)
-            #window.close()  # in order to clean but causes glitching,can be taken out
-            #window=window_sponsor()
+
 
     elif event == 'Update':
         window.close()
