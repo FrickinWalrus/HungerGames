@@ -239,8 +239,10 @@ def window_interaction():
 
     layout = [[sg.Text('Choose a source tribute:', pad=((0,0),(10,25))), sg.Combo(all_tributes, size=(40,len(all_tributes)), pad=((5,0),(10,25)),key='chosen_st')],
               [sg.Text('Choose a target tribute:', pad=((0, 0), (10, 25))),sg.Combo(all_tributes, size=(40, len(all_tributes)), pad=((5, 0), (10, 25)), key='chosen_tt')],
-              [sg.Text('New Interaction: '), sg.Input(key='new_interaction'), sg.Button('Record a new Interaction')],
-              [sg.Button('Return To Main')]]
+              [sg.Text('New Interaction: '), sg.Input(key='new_interaction')],
+              #[sg.Text('Enter the date of interaction.'),sg.CalendarButton("Pick date",key="date", format='%Y:%m:%d'),
+               [sg.Text('Enter the date of interaction.'),sg.Input(key='date'),sg.Text('Time: '), sg.Input(key='time')],
+              [sg.Button('Record a new Interaction'),sg.Button('Return To Main')]]
     return sg.Window('Interaction Window', layout)
 #ayceayce
 #dusdus
@@ -282,7 +284,7 @@ def window_sponsor():
                                      FROM Tribute
                                    '''):
         tribute_spo.append(row)
-
+    tribute_spo.append('')
     for row2 in cur.execute('''SELECT *
                                             FROM Gift
                                            '''):
@@ -297,9 +299,10 @@ def window_sponsor():
     layout = [[sg.Text('Welcome ' + login_user_name, font='Helvetica 12 bold', pad=(0,5))],
               [sg.Text('Your Credit Card Number:'+ str(credit_card_no[0])), sg.Button('Update')],
               [sg.Text('Filter Tributes By')],
-              [sg.Text('Game:'), sg.Combo(values=['2021','2020', ''], key='chosen_game'),sg.Text('Status:'),sg.Combo(values=['Dead', 'Alive',''], key='chosen_status'),sg.Text('District:'),sg.Combo(values=['1','2','3','5','6',''], key='chosen_district'),sg.Text('Name:'),sg.Combo(tribute_spo, key='chosen_name'),sg.Button('List Tributes')],
+              [sg.Text('Game:'), sg.Combo(values=['2021','2020', ''], key='chosen_game'),sg.Text('Status:'),sg.Combo(values=['Dead', 'Alive','Injured',''], key='chosen_status'),sg.Text('District:'),sg.Combo(values=['1','2','3','5','6',''], key='chosen_district'),sg.Text('Name:'),sg.Combo(tribute_spo, key='chosen_name'),sg.Button('List Tributes')],
               [sg.Listbox((),size=(40, 10),key='tribute4gift')],
-              [sg.Text('Choose a gift:', pad=((0, 0), (10, 25))),sg.Combo(available_gifts, size=(40, len(available_gifts)), pad=((5, 0), (10, 25)), key='gift4tribute')],
+              [sg.Text('Choose a gift:', pad=((0, 0), (10, 25))),sg.Combo(available_gifts, size=(40, len(available_gifts)), pad=((5, 0), (10, 25)), key='gift4tribute'),
+               sg.Text(' Enter amount:', pad=((0, 0), (10, 25))),sg.Input(key='gift_amount',pad=((5, 0), (10, 25)),size=(10, 10))],
               [sg.Button('Send Gift'), sg.Button('Logout')]]
     return sg.Window('Sponsor Login', layout)
 
@@ -384,7 +387,7 @@ def button_list_tributes(values):
 def button_send_gift(values):
     tribute = values['tribute4gift']
     gift = values['gift4tribute']
-
+    g_amount=values['gift_amount']
     cur.execute('''SELECT Status
             FROM Tribute
             WHERE TributeID=?''', (values['tribute4gift'][0][0],))
@@ -392,14 +395,20 @@ def button_send_gift(values):
     if status[0]=='Dead':  # the dead tributes can not receive gifts
         sg.popup_no_buttons("You can not send gifts to deceased tributes.", title='', auto_close=True,
                         auto_close_duration=2)
-
-    #print(gift)
-    #print(tribute)
+    elif g_amount=='':
+        sg.popup_no_buttons("Please enter amount.", title='', auto_close=True,
+                            auto_close_duration=2)
     else:
-        cur.execute('INSERT INTO SendsGift VALUES (?,?,?,?,?,?)', (gift[0], login_user_id, tribute[0][0], gift[1], None, False))
-        sg.popup("Your Gift has been added to the Pending List!")
-        window.Element('tribute4gift').Update(values=[])
-        window.Element('gift4tribute').Update(value='')
+        try:
+            amount=int(g_amount[0])
+            cur.execute('INSERT INTO SendsGift VALUES (?,?,?,?,?,?)', (gift[0], login_user_id, tribute[0][0], g_amount[0], None, False))
+            price=gift[1]*amount
+            sg.popup("Your Gift has been added to the Pending List! Total cost: "+str(price)+" dollars")
+            window.Element('tribute4gift').Update(values=[])
+            window.Element('gift4tribute').Update(value='')
+        except:
+            sg.popup_no_buttons("Please enter an integer for amount.", title='', auto_close=True,
+                                auto_close_duration=2)
 
 def window_update_credit_card():
 
@@ -470,8 +479,14 @@ while True:
         window = window_interaction()
 
     elif event == "Record a new Interaction":
-        interactionDate = datetime.now()
-        interactionDate = interactionDate.strftime('%Y-%m-%d %H:%M')
+        if values['date']=='':
+            interactionDate = datetime.now()
+            interactionDate = interactionDate.strftime('%Y-%m-%d %H:%M')
+        else:
+            date=values['date']
+            time=values['time']
+            interactionDate=date+' '+time
+
         new_interaction = values['new_interaction']
         source_tribute = values['chosen_st']
         target_tribute = values['chosen_tt']
@@ -493,7 +508,7 @@ while True:
         window = window_trb_status()
     elif event=='Set Status': #set status alive, dead, injured
         set_status()
-        window.close()
+        window.close() # in order to clean but cause glitching
         window=window_trb_status()
     elif event == 'List Tributes':
         button_list_tributes(values)
@@ -505,6 +520,8 @@ while True:
             sg.popup_no_buttons("Please choose a gift.", title='', auto_close=True, auto_close_duration=2)
         else:
             button_send_gift(values)
+            window.close()  # in order to clean but causes glitching,can be taken out
+            window=window_sponsor()
 
     elif event == 'Update':
         window.close()
