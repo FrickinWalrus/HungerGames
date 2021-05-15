@@ -262,7 +262,7 @@ def window_trb_status():
               [sg.Button('Return To Main')]]
     return sg.Window('Tribute Status Window', layout)
 
-def set_status():
+def set_status(values):
     if values['chosen_trb'] == []:
         sg.popup_no_buttons("Please select a tribute.", title='', auto_close=True, auto_close_duration=2)
     elif values['chosen_stat']==[]:
@@ -284,9 +284,10 @@ def window_sponsor():
     tribute_spo = []
     available_gifts = []
     for row in cur.execute('''SELECT TName
-                                  FROM Tribute'''):
+                              FROM Tribute'''):
         tribute_spo.append(row)
     tribute_spo.append('')
+    tribute_spo = list(set(tribute_spo))
     for row2 in cur.execute('''SELECT *
                                FROM Gift'''):
         available_gifts.append(row2)
@@ -301,7 +302,7 @@ def window_sponsor():
               [sg.Text('Your Credit Card Number:'+ str(credit_card_no[0])), sg.Button('Update')],
               [sg.Text('Filter Tributes By')],
               [sg.Text('Game:'), sg.Combo(values=['2021','2020', ''], key='chosen_game'),
-               sg.Text('Status:'),sg.Combo(values=['Dead', 'Alive',''], key='chosen_status'),
+               sg.Text('Status:'),sg.Combo(values=['Dead', 'Alive', 'Injured',''], key='chosen_status'),
                sg.Text('District:'),sg.Combo(values=['1','2','3','5','6',''], key='chosen_district'),
                sg.Text('Name:'),sg.Combo(tribute_spo, key='chosen_name'),
                sg.Button('List Tributes')],
@@ -319,70 +320,128 @@ def button_list_tributes(values):
     name = values['chosen_name']
     filter_result = []
 
-
-    if len(name) == 0 and len(district) == 0 and len(status) == 0 and len(game) ==0:
+    if len(name) == 0 and len(district) == 0 and len(status) == 0 and len(game) == 0:
 
         for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                  FROM Tribute'''):
+                                         FROM Tribute
+                                        '''):
             filter_result.append(row)
 
     elif len(name) == 0 and len(game) != 0 and len(status) != 0 and len(district) != 0:
         filter_result = []
         for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                  FROM Tribute
-                                  WHERE Game_year= ? and Status=? and DistrictID=?''',(game, status, district)):
+                                                       FROM Tribute
+                                                       WHERE Game_year= ? and Status=? and DistrictID=?''',
+                               (game, status, district)):
             filter_result.append(row)
 
-    elif len(name)== 0 and len(district)== 0:
+    elif len(name) == 0 and len(district) == 0:
         if len(game) == 0:
             filter_result = []
             for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                      FROM Tribute
-                                      WHERE Status=?''', (status,)):
+                                                                        FROM Tribute
+                                                                        WHERE Status=?''', (status,)):
                 filter_result.append(row)
         elif len(status) == 0:
 
             filter_result = []
             for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                      FROM Tribute
-                                      WHERE Game_year= ?''', (game,)):
+                                                     FROM Tribute
+                                                     WHERE Game_year= ?''', (game,)):
                 filter_result.append(row)
         else:
             filter_result = []
             for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                      FROM Tribute
-                                      WHERE Game_year= ? and Status=?''', (game,status)):
+                                                     FROM Tribute
+                                                     WHERE Game_year= ? and Status=?''', (game, status)):
                 filter_result.append(row)
 
     elif len(name) == 0 and len(status) == 0 and len(game) != 0 and len(district) != 0:
         filter_result = []
         for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                  FROM Tribute
-                                  WHERE Game_year= ? and DistrictID=?''', (game,  district)):
+                                                            FROM Tribute
+                                                            WHERE Game_year= ? and DistrictID=?''', (game, district)):
             filter_result.append(row)
 
 
-    elif len(name) == 0 and len(game)== 0 and len(status)== 0 and len(district) != 0:
+    elif len(name) == 0 and len(game) == 0 and len(status) == 0 and len(district) != 0:
 
         filter_result = []
         for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                  FROM Tribute
-                                  WHERE DistrictID=?''', (district,)):
+                                                                    FROM Tribute
+                                                                    WHERE DistrictID=?''', (district,)):
             filter_result.append(row)
 
-    elif len(name) == 0 and len(game)== 0 and len(status) != 0 and len(district) != 0:
+    elif len(name) == 0 and len(game) == 0 and len(status) != 0 and len(district) != 0:
         filter_result = []
         for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                  FROM Tribute
-                                  WHERE Status=? and DistrictID=?''', (status,  district)):
+                                                            FROM Tribute
+                                                            WHERE Status=? and DistrictID=?''', (status, district)):
             filter_result.append(row)
 
     else:
-        filter_result = []
-        for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
-                                  FROM Tribute
-                                  WHERE TName=? and TSurname=?''', (name[2],name[3])):
-            filter_result.append(row)
+        if len(game) == 0 and len(status) == 0 and len(district) == 0:
+            filter_result = []
+            for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
+                                        FROM Tribute
+                                        WHERE TName=?''',
+                                   (list(name)[0],)):
+                filter_result.append(row)
+
+        if len(game) == 0 and len(status) == 0 and len(district) != 0:
+            filter_result = []
+            for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
+                                        FROM Tribute
+                                        WHERE DistrictID=? and TName=?''',
+                                   (district, list(name)[0])):
+                filter_result.append(row)
+
+        if len(game) == 0 and len(status) != 0 and len(district) == 0:
+            filter_result = []
+            for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
+                                        FROM Tribute
+                                        WHERE Status=? and TName=?''',
+                                   (status, list(name)[0])):
+                filter_result.append(row)
+
+        if len(game) == 0 and len(status) != 0 and len(district) != 0:
+            filter_result = []
+            for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
+                                                                                FROM Tribute
+                                                                                WHERE TName=? and Status=? and DistrictID=?''',
+                                   (list(name)[0], status, district)):
+                filter_result.append(row)
+
+        if len(game) != 0 and len(status) != 0 and len(district) != 0:
+            filter_result = []
+            for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
+                                                                                FROM Tribute
+                                                                                WHERE TName=? and Game_year= ? and Status=? and DistrictID=?''',
+                                   (list(name)[0], game, status, district)):
+                filter_result.append(row)
+        if len(game) != 0 and len(status) == 0 and len(district) != 0:
+            filter_result = []
+            for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
+                                                                                FROM Tribute
+                                                                                WHERE TName=? and Game_year= ? and DistrictID=?''',
+                                   (list(name)[0], game, district)):
+                filter_result.append(row)
+        if len(game) != 0 and len(status) != 0 and len(district) == 0:
+            filter_result = []
+            for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
+                                        FROM Tribute
+                                        WHERE Game_year= ? and Status=? and TName=?''',
+                                   (game, status, list(name)[0],)):
+                filter_result.append(row)
+
+        if len(game) != 0 and len(status) == 0 and len(district) == 0:
+            filter_result = []
+            for row in cur.execute('''SELECT TributeID, TName, TSurname, DistrictID
+                                        FROM Tribute
+                                        WHERE Game_year= ? and TName=?''',
+                                   (game, list(name)[0],)):
+                filter_result.append(row)
+
     window.Element('tribute4gift').Update(values=filter_result)
 
 
@@ -400,12 +459,16 @@ def button_send_gift(values):
         sg.popup_no_buttons("Please enter amount.", title='', auto_close=True,auto_close_duration=2)
     else:
         try:
-            amount = int(g_amount)
+            amount=int(g_amount)
             cur.execute('INSERT INTO SendsGift VALUES (?,?,?,?,?,?)', (gift[0], login_user_id, tribute[0][0], g_amount, None, False))
-            price = gift[1] * amount
+            price=gift[1]*amount
             sg.popup("Your Gift has been added to the Pending List! Total cost: "+str(price)+" dollars")
             window.Element('tribute4gift').Update(values=[])
             window.Element('gift4tribute').Update(value='')
+            window.Element('chosen_status').Update(value='')
+            window.Element('chosen_name').Update(value='')
+            window.Element('chosen_game').Update(value='')
+            window.Element('chosen_district').Update(value='')
         except:
             sg.popup_no_buttons("Please enter an integer for amount.", title='', auto_close=True,
                                 auto_close_duration=2)
@@ -504,13 +567,15 @@ while True:
             window.Element('new_interaction').Update(value='')
             window.Element('chosen_st').Update(value='')
             window.Element('chosen_tt').Update(value='')
+
     elif event=='Change Tribute Status': # game makers can change the status of tributes
         window.close()
         window = window_trb_status()
+
     elif event=='Set Status': #set status alive, dead, injured
-        set_status()
-        window.close() # in order to clean but cause glitching
-        window=window_trb_status()
+        set_status(values)
+
+
     elif event == 'List Tributes':
         button_list_tributes(values)
 
@@ -521,8 +586,7 @@ while True:
             sg.popup_no_buttons("Please choose a gift.", title='', auto_close=True, auto_close_duration=2)
         else:
             button_send_gift(values)
-            window.close()  # in order to clean but causes glitching,can be taken out
-            window=window_sponsor()
+
 
     elif event == 'Update':
         window.close()
