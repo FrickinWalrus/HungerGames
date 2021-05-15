@@ -262,8 +262,7 @@ def window_trb_status():
               [sg.Button('Return To Main')]]
     return sg.Window('Tribute Status Window', layout)
 
-def set_status(values):
-
+def set_status():
     if values['chosen_trb'] == []:
         sg.popup_no_buttons("Please select a tribute.", title='', auto_close=True, auto_close_duration=2)
     elif values['chosen_stat']==[]:
@@ -401,17 +400,12 @@ def button_send_gift(values):
         sg.popup_no_buttons("Please enter amount.", title='', auto_close=True,auto_close_duration=2)
     else:
         try:
-            amount=int(g_amount)
-            cur.execute('INSERT INTO SendsGift VALUES (?,?,?,?,?,?)', (gift[0], login_user_id, tribute[0][0], g_amount, None, False))
+            amount=int(g_amount[0])
+            cur.execute('INSERT INTO SendsGift VALUES (?,?,?,?,?,?)', (gift[0], login_user_id, tribute[0][0], g_amount[0], None, False))
             price=gift[1]*amount
             sg.popup("Your Gift has been added to the Pending List! Total cost: "+str(price)+" dollars")
             window.Element('tribute4gift').Update(values=[])
             window.Element('gift4tribute').Update(value='')
-            window.Element('gift_amount').Update(value='')
-            window.Element('chosen_game').Update(value='')
-            window.Element('chosen_status').Update(value='')
-            window.Element('chosen_district').Update(value='')
-            window.Element('chosen_name').Update(value='')
         except:
             sg.popup_no_buttons("Please enter an integer for amount.", title='', auto_close=True,
                                 auto_close_duration=2)
@@ -510,14 +504,13 @@ while True:
             window.Element('new_interaction').Update(value='')
             window.Element('chosen_st').Update(value='')
             window.Element('chosen_tt').Update(value='')
-
     elif event=='Change Tribute Status': # game makers can change the status of tributes
         window.close()
         window = window_trb_status()
-
     elif event=='Set Status': #set status alive, dead, injured
-        set_status(values)
-
+        set_status()
+        window.close() # in order to clean but cause glitching
+        window=window_trb_status()
     elif event == 'List Tributes':
         button_list_tributes(values)
 
@@ -528,7 +521,8 @@ while True:
             sg.popup_no_buttons("Please choose a gift.", title='', auto_close=True, auto_close_duration=2)
         else:
             button_send_gift(values)
-
+            window.close()  # in order to clean but causes glitching,can be taken out
+            window=window_sponsor()
 
     elif event == 'Update':
         window.close()
@@ -536,6 +530,7 @@ while True:
 
     elif event == 'Update My Credit Card Number':
         new_cc_no = values['new_credit_card_no']
+        #print(len(str(new_cc_no)))
         if new_cc_no.isnumeric():
             if len(str(new_cc_no)) == 16:
                 cur.execute('UPDATE Sponsor SET CardNumber = ? WHERE SpSSN = ?',(new_cc_no,login_user_id))
