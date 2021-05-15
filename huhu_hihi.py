@@ -320,6 +320,7 @@ def window_sponsor():
               [sg.Button('Send Gift'), sg.Button('Logout')]]
     return sg.Window('Sponsor Login', layout)
 
+
 def button_list_tributes(values):
     game = values['chosen_game']
     district = values['chosen_district']
@@ -450,6 +451,8 @@ def button_list_tributes(values):
                 filter_result.append(row)
 
     window.Element('tribute4gift').Update(values=filter_result)
+
+
 def button_send_gift(values):
     tribute = values['tribute4gift']
     gift = values['gift4tribute']
@@ -486,6 +489,7 @@ def window_update_credit_card():
               [sg.Button('Return To Main')]]
     return sg.Window('Update Credit Card Number', layout)
 
+#dusdus
 
 # ----------- MAIN CODE -----------
 window = window_login()
@@ -532,6 +536,7 @@ while True:
     elif event == 'Set a new rule':
         button_set_rule(values)
 
+
     elif event == "Mentors":
         window.close()
         window = window_award()
@@ -550,36 +555,72 @@ while True:
 
     elif event == "Record a new Interaction":
         if values['date']=='':
-            interactionDate = datetime.now()
-            #interactionDate = interactionDate.strftime('%Y-%m-%d %H:%M')
-        else:
-            date=values['date']
-            time=values['time']
-            interactionDate=date+' '+time
+            if values['time']=='':
+                interactionDate = datetime.now()
+                new_interaction = values['new_interaction']
+                source_tribute = values['chosen_st']
+                target_tribute = values['chosen_tt']
 
-        new_interaction = values['new_interaction']
-        source_tribute = values['chosen_st']
-        target_tribute = values['chosen_tt']
-
-        if not source_tribute:
-            sg.popup_no_buttons("Please choose a source tribute.", title='', auto_close=True, auto_close_duration=2)
-        elif not target_tribute:
-            sg.popup_no_buttons("Please choose a target tribute.", title='', auto_close=True, auto_close_duration=2)
-        elif new_interaction == '':
-            sg.popup_no_buttons("Please enter a valid interaction.", title='',auto_close=True, auto_close_duration=2)
+                if not source_tribute:
+                    sg.popup_no_buttons("Please choose a source tribute.", title='', auto_close=True,
+                                        auto_close_duration=2)
+                elif not target_tribute:
+                    sg.popup_no_buttons("Please choose a target tribute.", title='', auto_close=True,
+                                        auto_close_duration=2)
+                elif new_interaction == '':
+                    sg.popup_no_buttons("Please enter a valid interaction.", title='', auto_close=True,
+                                        auto_close_duration=2)
+                else:
+                    cur.execute('INSERT INTO Interaction VALUES (?,?,?,?)',
+                                (interactionDate, new_interaction, source_tribute[0], target_tribute[0]))
+                    sg.popup('Tribute Activity Recorded.')
+                    window.Element('new_interaction').Update(value='')
+                    window.Element('chosen_st').Update(value='')
+                    window.Element('chosen_tt').Update(value='')
+                    window.Element('date').Update(value='')
+                    window.Element('time').Update(value='')
+            else:
+                sg.popup_no_buttons("Please enter a valid date.", title='', auto_close=True, auto_close_duration=2)
+                window.Element('time').Update(value='')
         else:
-            cur.execute('INSERT INTO Interaction VALUES (?,?,?,?)', (interactionDate,new_interaction,source_tribute[0] ,target_tribute[0]))
-            sg.popup('Tribute Activity Recorded.')
-            window.Element('new_interaction').Update(value='')
-            window.Element('chosen_st').Update(value='')
-            window.Element('chosen_tt').Update(value='')
-            window.Element('date').Update(value='')
-            window.Element('time').Update(value='')
+            if values['time']=='':
+                sg.popup_no_buttons("Please enter a valid time.", title='', auto_close=True, auto_close_duration=2)
+                window.Element('time').Update(value='')
+            else:
+                date=values['date']
+                time=values['time']
+                interactionDate=date+' '+time
+
+                new_interaction = values['new_interaction']
+                source_tribute = values['chosen_st']
+                target_tribute = values['chosen_tt']
+
+                if not source_tribute:
+                    sg.popup_no_buttons("Please choose a source tribute.", title='', auto_close=True, auto_close_duration=2)
+                elif not target_tribute:
+                    sg.popup_no_buttons("Please choose a target tribute.", title='', auto_close=True, auto_close_duration=2)
+                elif new_interaction == '':
+                    sg.popup_no_buttons("Please enter a valid interaction.", title='',auto_close=True, auto_close_duration=2)
+                else:
+                    cur.execute('INSERT INTO Interaction VALUES (?,?,?,?)', (interactionDate,new_interaction,source_tribute[0] ,target_tribute[0]))
+                    sg.popup('Tribute Activity Recorded.')
+                    window.Element('new_interaction').Update(value='')
+                    window.Element('chosen_st').Update(value='')
+                    window.Element('chosen_tt').Update(value='')
+                    window.Element('date').Update(value='')
+                    window.Element('time').Update(value='')
+
+
+
+
+
     elif event=='Change Tribute Status': # game makers can change the status of tributes
         window.close()
         window = window_trb_status()
+
     elif event=='Set Status': #set status alive, dead, injured
         set_status(values)
+
 
     elif event == 'List Tributes':
         button_list_tributes(values)
