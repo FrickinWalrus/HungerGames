@@ -244,7 +244,8 @@ def window_interaction():
               [sg.Text('Choose a target tribute:', pad=((0, 0), (10, 25))),sg.Combo(all_tributes, size=(40, len(all_tributes)), pad=((5, 0), (10, 25)), key='chosen_tt')],
               [sg.Text('New Interaction: '), sg.Input(key='new_interaction')],
               #[sg.Text('Enter the date of interaction.'),sg.CalendarButton("Pick date",key="date", format='%Y:%m:%d'),
-               [sg.Text('Enter the date of interaction.'),sg.Input(key='date'),sg.Text('Time: '), sg.Input(key='time')],
+              # [sg.Text('Enter the date of interaction.'),sg.Input(key='date'),sg.Text('Time: '), sg.Input(key='time')],
+              [sg.In(key='date', enable_events=True, visible=False), sg.CalendarButton('Calendar', target='date', format='%Y:%m:%d'),sg.Text('Time: '), sg.Input(key='time')],
               [sg.Button('Record a new Interaction'),sg.Button('Return To Main')]]
     return sg.Window('Interaction Window', layout)
 #ayceayce
@@ -550,7 +551,7 @@ while True:
     elif event == "Record a new Interaction":
         if values['date']=='':
             interactionDate = datetime.now()
-            interactionDate = interactionDate.strftime('%Y-%m-%d %H:%M')
+            #interactionDate = interactionDate.strftime('%Y-%m-%d %H:%M')
         else:
             date=values['date']
             time=values['time']
@@ -572,6 +573,8 @@ while True:
             window.Element('new_interaction').Update(value='')
             window.Element('chosen_st').Update(value='')
             window.Element('chosen_tt').Update(value='')
+            window.Element('date').Update(value='')
+            window.Element('time').Update(value='')
     elif event=='Change Tribute Status': # game makers can change the status of tributes
         window.close()
         window = window_trb_status()
