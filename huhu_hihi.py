@@ -188,11 +188,11 @@ def window_games():
 
 def button_see_rules(values):
     game = values["chosen_game"]
-    year = game[0]
     if game == "":
         sg.popup("Please choose a game")
     else:
         rules = []
+        year = game[0]
         for row in cur.execute('''SELECT Rule_Year, Content
                                   FROM AddsRules
                                   WHERE Rule_Year = ?''', (year,)):
